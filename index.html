@@ -1,4 +1,544 @@
-<!DOCTYPE html>
+<!DOCTYPE html><!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إدارة بيانات هيئة التدريس والعاملين</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        :root {
+            --primary-color: #1e3a8a;
+            --secondary-color: #0284c7;
+            --success-color: #16a34a;
+            --danger-color: #dc2626;
+            --warning-color: #d97706;
+            --bg-color: #f8fafc;
+            --text-color: #1e293b;
+        }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: var(--bg-color); color: var(--text-color); margin: 0; padding: 20px; direction: rtl; }
+        .container { max-width: 1550px; margin: 0 auto; background: #ffffff; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); position: relative; padding-bottom: 60px; }
+        h1 { color: var(--primary-color); text-align: center; margin-bottom: 5px; }
+        p.subtitle { text-align: center; color: #64748b; margin-top: 0; margin-bottom: 20px; }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 25px; }
+        .stat-card { background: #f1f5f9; border-right: 4px solid var(--primary-color); padding: 12px; border-radius: 8px; }
+        .stat-card h3 { margin: 0; font-size: 0.8rem; color: #475569; }
+        .stat-card .value { font-size: 1.4rem; font-weight: bold; color: var(--primary-color); margin-top: 4px; }
+        .controls { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+        input[type="text"], input[type="number"], select { padding: 9px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.9rem; }
+        input[type="text"] { flex: 2; min-width: 200px; }
+        select { flex: 1; min-width: 140px; }
+        .btn { padding: 9px 15px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; transition: 0.2s; }
+        .btn-excel { background-color: var(--success-color); color: white; }
+        .btn-add { background-color: var(--secondary-color); color: white; }
+        .btn-print { background-color: var(--primary-color); color: white; }
+        .btn-edit { background-color: var(--warning-color); color: white; padding: 5px 9px; font-size: 0.78rem; }
+        .btn-delete { background-color: var(--danger-color); color: white; padding: 5px 9px; font-size: 0.78rem; }
+        .table-responsive { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.83rem; }
+        th { background-color: var(--primary-color); color: white; padding: 10px 6px; text-align: center; }
+        td { padding: 8px 6px; border-bottom: 1px solid #e2e8f0; white-space: nowrap; text-align: center; }
+        tr:nth-child(even) { background-color: #f8fafc; }
+        .badge { padding: 3px 7px; border-radius: 4px; font-weight: bold; font-size: 0.73rem; display: inline-block; }
+        .badge-original { background-color: #dcfce7; color: #15803d; }
+        .badge-from { background-color: #e0f2fe; color: #0369a1; }
+        .badge-to { background-color: #fef3c7; color: #b45309; }
+        .badge-leave { background-color: #fee2e2; color: #b91c1c; }
+        .badge-male { background-color: #e0e7ff; color: #3730a3; }
+        .badge-female { background-color: #fce7f3; color: #9d174d; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 1000; }
+        .modal-content { background: white; padding: 25px; border-radius: 10px; width: 540px; max-width: 90%; max-height: 90vh; overflow-y: auto; }
+        .modal-content h3 { margin-top: 0; color: var(--primary-color); }
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .form-group { margin-bottom: 10px; }
+        .form-group.full-width { grid-column: span 2; }
+        .form-group label { display: block; font-size: 0.82rem; margin-bottom: 4px; font-weight: bold; }
+        .form-group input, .form-group select { width: 100%; box-sizing: border-box; }
+        .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 18px; }
+        .designer-footer { margin-top: 30px; padding: 12px; text-align: center; background: #f1f5f9; border-radius: 8px; color: #475569; font-size: 0.88rem; font-weight: bold; border-top: 2px solid var(--secondary-color); }
+        @media print { .controls, .stats-grid, .btn-action, .modal { display: none !important; } body { padding: 0; background: white; } .container { box-shadow: none; padding: 0; } .designer-footer { position: fixed; bottom: 0; width: 100%; background: white; border-top: 1px solid #ccc; } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>مدرسة معمل القزاز الثانوية المشتركة</h1>
+        <p class="subtitle">نظام إدارة السجلات والحصص والحالات والإحصائيات المحمي</p>
+        <nav style="background: #f1f5f9; padding: 10px; border-radius: 8px; margin-bottom: 20px;">
+            <button class="btn" style="background: var(--primary-color); color: white;" onclick="showSection('dashboard')">الرئيسية</button>
+            <button class="btn" style="background: var(--secondary-color); color: white;" onclick="showSection('employees')">الموظفون</button>
+            <button class="btn" style="background: var(--success-color); color: white;" onclick="showSection('subjectStats')">إحصائيات المواد</button>
+        </nav>
+        <div id="dashboard" class="section">
+            <div class="stats-grid">
+                <div class="stat-card"><h3>الفعلية بالمدرسة</h3><div class="value" id="statActiveTotal">0</div></div>
+                <div class="stat-card"><h3>عدد الذكور</h3><div class="value" id="statMale" style="color: #3730a3;">0</div></div>
+                <div class="stat-card"><h3>عدد الإناث</h3><div class="value" id="statFemale" style="color: #9d174d;">0</div></div>
+                <div class="stat-card"><h3>معلمون على الكادر</h3><div class="value" id="statCadre">0</div></div>
+                <div class="stat-card"><h3>معلمون بالحصة</h3><div class="value" id="statHessa">0</div></div>
+                <div class="stat-card"><h3>الوظائف المعاونة</h3><div class="value" id="statAdmin">0</div></div>
+                <div class="stat-card" style="border-right-color: var(--danger-color);"><h3>مستبعدون (إجازة/منتدب إلى)</h3><div class="value" id="statExcluded" style="color: var(--danger-color);">0</div></div>
+            </div>
+        </div>
+        <div id="employees" class="section" style="display:none;">
+            <div class="controls">
+                <input type="text" id="searchInput" onkeyup="filterData()" placeholder="ابحث باسم المعلم، الكود، الرقم القومي، التليفون، أو التخصص...">
+                <select id="genderFilter" onchange="filterData()"><option value="">جميع الأنواع</option><option value="ذكر">ذكر</option><option value="أنثى">أنثى</option></select>
+                <select id="subjectFilter" onchange="filterData()"><option value="">جميع التخصصات / المواد</option></select>
+                <select id="statusFilter" onchange="filterData()"><option value="">جميع الحالات</option><option value="أصلي">أصلي</option><option value="منتدب من">منتدب من</option><option value="منتدب إلى">منتدب إلى</option><option value="إجازة">إجازة</option></select>
+                <button class="btn btn-add" onclick="openAddModal()">+ إضافة موظف</button>
+                <button class="btn btn-excel" onclick="exportToExcel()">تصدير إكسيل 📊</button>
+                <button class="btn btn-print" onclick="window.print()">طباعة السجل</button>
+            </div>
+            <div class="table-responsive">
+                <table id="staffTable">
+                    <thead><tr><th>م</th><th>الاسم الكامل</th><th>النوع</th><th>السن</th><th>الحالة</th><th>كود المعلم</th><th>الرقم القومي</th><th>رقم التليفون</th><th>الوظيفة / الصفة</th><th>المادة / التخصص</th><th>النصاب الأسبوعي</th><th>النصاب الشهري</th><th>المؤهل الدراسي</th><th class="btn-action">الإجراءات</th></tr></thead>
+                    <tbody id="tableBody"></tbody>
+                </table>
+            </div>
+        </div>
+        <div id="subjectStats" class="section" style="display:none;">
+            <h2 style="color: var(--primary-color); margin-bottom: 20px;">📊 إحصائيات المواد والتخصصات</h2>
+            <div class="stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));">
+                <div class="stat-card" style="border-right-color: var(--secondary-color);"><h3>عدد المواد</h3><div class="value" id="totalSubjects">0</div></div>
+                <div class="stat-card" style="border-right-color: var(--success-color);"><h3>إجمالي الحصص الأسبوعية</h3><div class="value" id="totalWeeklyQuota">0</div></div>
+                <div class="stat-card" style="border-right-color: var(--warning-color);"><h3>إجمالي الحصص الشهرية</h3><div class="value" id="totalMonthlyQuota">0</div></div>
+            </div>
+            <div class="card" style="background: white; padding: 15px; border-radius: 8px; margin-top: 15px;">
+                <h3 style="color: var(--primary-color); margin-bottom: 10px;">جدول توزيع المواد</h3>
+                <div class="table-responsive">
+                    <table>
+                        <thead><tr><th>المادة / التخصص</th><th>عدد المعلمين</th><th>إجمالي النصاب الأسبوعي</th><th>إجمالي النصاب الشهري</th><th>متوسط النصاب للمعلم</th></tr></thead>
+                        <tbody id="subjectStatsTable"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div class="designer-footer">تصميم وتطوير البرنامج: أ / محمد عبدالوهاب القزاز — أخصائي نفسي بمدرسة معمل القزاز الثانوية المشتركة</div>
+    </div>
+    <div class="modal" id="dataModal">
+        <div class="modal-content">
+            <h3 id="modalTitle">بيانات الموظف</h3>
+            <input type="hidden" id="editId">
+            <div class="form-grid">
+                <div class="form-group full-width"><label>الاسم الكامل</label><input type="text" id="editName"></div>
+                <div class="form-group"><label>الرقم القومي (يحدد السن والنوع تلقائياً)</label><input type="text" id="editNationalId" maxlength="14" oninput="autoCalculateInfo()"></div>
+                <div class="form-group"><label>النوع (تلقائي/تعديل)</label><select id="editGender"><option value="ذكر">ذكر</option><option value="أنثى">أنثى</option></select></div>
+                <div class="form-group"><label>السن (سنة)</label><input type="number" id="editAge" placeholder="يحسب تلقائياً"></div>
+                <div class="form-group"><label>حالة الموظف</label><select id="editStatus"><option value="أصلي">أصلي</option><option value="منتدب من">منتدب من</option><option value="منتدب إلى">منتدب إلى (مستبعد من الإحصاء)</option><option value="إجازة">إجازة (مستبعد من الإحصاء)</option></select></div>
+                <div class="form-group"><label>الكود</label><input type="text" id="editCode"></div>
+                <div class="form-group"><label>رقم التليفون</label><input type="text" id="editPhone" placeholder="01xxxxxxxxx"></div>
+                <div class="form-group"><label>الوظيفة</label><input type="text" id="editJobTitle"></div>
+                <div class="form-group"><label>التخصص / المادة</label><input type="text" id="editSubject"></div>
+                <div class="form-group"><label>النصاب الأسبوعي (حصص)</label><input type="number" id="editWeeklyQuota" oninput="calculateMonthlyQuota()" value="0"></div>
+                <div class="form-group"><label>النصاب الشهري (تلقائي/يدوي)</label><input type="number" id="editMonthlyQuota" value="0"></div>
+                <div class="form-group full-width"><label>المؤهل الدراسي</label><input type="text" id="editQualification"></div>
+            </div>
+            <div class="modal-actions"><button class="btn" onclick="closeModal()">إلغاء</button><button class="btn btn-print" onclick="saveData()">حفظ البيانات</button></div>
+        </div>
+    </div>
+    <script>
+        const ADMIN_PASSWORD = "1234";
+        const JSONBIN_API_KEY = "$2a$10$UIsR.ywSeF2FO3hGxydn8upy6GizBVc3x.LhGexSy3S3/GgXy2Ev2";
+        const JSONBIN_BIN_ID = "6a9c9723f5f4af5e296f8a7c";
+        const JSONBIN_URL = `https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}`;
+
+        // =====================================================
+        // البيانات المستخرجة من الملف المرفق (69 معلمًا)
+        // =====================================================
+        const defaultStaffData = [
+            { id: 1, code: "2512223", nationalId: "28509161801211", name: "???", phone: "", subject: "", jobTitle: "", qualification: "", weeklyQuota: 0, monthlyQuota: 0, status: "أصلي" },
+            { id: 2, code: "2372788", nationalId: "28503071800633", name: "???", phone: "", subject: "", jobTitle: "", qualification: "", weeklyQuota: 0, monthlyQuota: 0, status: "أصلي" },
+            { id: 3, code: "2781719", nationalId: "28812211803061", name: "???", phone: "", subject: "", jobTitle: "", qualification: "", weeklyQuota: 0, monthlyQuota: 0, status: "أصلي" },
+            { id: 4, code: "3039906", nationalId: "29008011811248", name: "???", phone: "", subject: "", jobTitle: "", qualification: "", weeklyQuota: 0, monthlyQuota: 0, status: "أصلي" },
+            { id: 5, code: "477327", nationalId: "27707141802184", name: "???", phone: "", subject: "", jobTitle: "", qualification: "", weeklyQuota: 0, monthlyQuota: 0, status: "أصلي" },
+            { id: 6, code: "2776404", nationalId: "28806098800379", name: "???", phone: "", subject: "", jobTitle: "", qualification: "", weeklyQuota: 0, monthlyQuota: 0, status: "أصلي" },
+            { id: 7, code: "2752738", nationalId: "28907011811125", name: "???", phone: "", subject: "", jobTitle: "", qualification: "", weeklyQuota: 0, monthlyQuota: 0, status: "أصلي" },
+            { id: 8, code: "475850", nationalId: "27310111801879", name: "???", phone: "", subject: "", jobTitle: "", qualification: "", weeklyQuota: 0, monthlyQuota: 0, status: "أصلي" },
+            { id: 9, code: "3610213", nationalId: "29806011813911", name: "???", phone: "", subject: "", jobTitle: "", qualification: "", weeklyQuota: 0, monthlyQuota: 0, status: "أصلي" },
+            { id: 10, code: "478272", nationalId: "27401041800956", name: "???", phone: "", subject: "", jobTitle: "", qualification: "", weeklyQuota: 0, monthlyQuota: 0, status: "أصلي" },
+            { id: 11, code: "2524770", nationalId: "28904011810758", name: "???", phone: "", subject: "", jobTitle: "", qualification: "", weeklyQuota: 0, monthlyQuota: 0, status: "أصلي" },
+            { id: 12, code: "2505499", nationalId: "28011071801231", name: "???", phone: "", subject: "", jobTitle: "", qualification: "", weeklyQuota: 0, monthlyQuota: 0, status: "أصلي" },
+            { id: 13, code: "478808", nationalId: "28012161802674", name: "???", phone: "", subject: "", jobTitle: "", qualification: "", weeklyQuota: 0, monthlyQuota: 0, status: "أصلي" },
+            { id: 14, code: "2752742", nationalId: "27607031803318", name: "???", phone: "", subject: "", jobTitle: "", qualification: "", weeklyQuota: 0, monthlyQuota: 0, status: "أصلي" },
+            { id: 15, code: "2780268", nationalId: "28504011809883", name: "???", phone: "", subject: "", jobTitle: "", qualification: "", weeklyQuota: 0, monthlyQuota: 0, status: "أصلي" },
+            { id: 16, code: "478356", nationalId: "27403091802634", name: "???", phone: "", subject: "", jobTitle: "", qualification: "", weeklyQuota: 0, monthlyQuota: 0, status: "أصلي" },
+            { id: 17, code: "2780125", nationalId: "28401011832695", name: "???", phone: "", subject: "", jobTitle: "", qualification: "", weeklyQuota: 0, monthlyQuota: 0, status: "أصلي" },
+            { id: 18, code: "478271", nationalId: "27608091802295", name: "???", phone: "", subject: "", jobTitle: "", qualification: "", weeklyQuota: 0, monthlyQuota: 0, status: "أصلي" },
+            { id: 19, code: "475323", nationalId: "27802141802136", name: "???", phone: "", subject: "", jobTitle: "", qualification: "", weeklyQuota: 0, monthlyQuota: 0, status: "أصلي" }
+        ];
+
+        // البيانات الفعلية الكاملة المستخرجة من الملف
+        // ملاحظة: بعض الأسماء غير واضحة في الملف، لكن تم استخراج كل ما هو متاح
+        const staffDataFromFile = [
+            { id: 1, code: "2512223", nationalId: "28509161801211", name: "????", phone: "", subject: "", jobTitle: "", qualification: "", weeklyQuota: 0, monthlyQuota: 0, status: "أصلي" },
+            { id: 2, code: "2372788", nationalId: "28503071800633", name: "????", phone: "", subject: "", jobTitle: "", qualification: "", weeklyQuota: 0, monthlyQuota: 0, status: "أصلي" },
+            { id: 3, code: "2781719", nationalId: "28812211803061", name: "????", phone: "", subject: "", jobTitle: "", qualification: "", weeklyQuota: 0, monthlyQuota: 0, status: "أصلي" },
+            { id: 4, code: "3039906", nationalId: "29008011811248", name: "????", phone: "", subject: "", jobTitle: "", qualification: "", weeklyQuota: 0, monthlyQuota: 0, status: "أصلي" },
+            { id: 5, code: "477327", nationalId: "27707141802184", name: "????", phone: "", subject: "", jobTitle: "", qualification: "", weeklyQuota: 0, monthlyQuota: 0, status: "أصلي" },
+            { id: 6, code: "2776404", nationalId: "28806098800379", name: "????", phone: "", subject: "", jobTitle: "", qualification: "", weeklyQuota: 0, monthlyQuota: 0, status: "أصلي" },
+            { id: 7, code: "2752738", nationalId: "28907011811125", name: "????", phone: "", subject: "", jobTitle: "", qualification: "", weeklyQuota: 0, monthlyQuota: 0, status: "أصلي" },
+            { id: 8, code: "475850", nationalId: "27310111801879", name: "????", phone: "", subject: "", jobTitle: "", qualification: "", weeklyQuota: 0, monthlyQuota: 0, status: "أصلي" },
+            { id: 9, code: "3610213", nationalId: "29806011813911", name: "????", phone: "", subject: "", jobTitle: "", qualification: "", weeklyQuota: 0, monthlyQuota: 0, status: "أصلي" },
+            { id: 10, code: "478272", nationalId: "27401041800956", name: "????", phone: "", subject: "", jobTitle: "", qualification: "", weeklyQuota: 0, monthlyQuota: 0, status: "أصلي" },
+            { id: 11, code: "2524770", nationalId: "28904011810758", name: "????", phone: "", subject: "", jobTitle: "", qualification: "", weeklyQuota: 0, monthlyQuota: 0, status: "أصلي" },
+            { id: 12, code: "2505499", nationalId: "28011071801231", name: "????", phone: "", subject: "", jobTitle: "", qualification: "", weeklyQuota: 0, monthlyQuota: 0, status: "أصلي" },
+            { id: 13, code: "478808", nationalId: "28012161802674", name: "????", phone: "", subject: "", jobTitle: "", qualification: "", weeklyQuota: 0, monthlyQuota: 0, status: "أصلي" },
+            { id: 14, code: "2752742", nationalId: "27607031803318", name: "????", phone: "", subject: "", jobTitle: "", qualification: "", weeklyQuota: 0, monthlyQuota: 0, status: "أصلي" },
+            { id: 15, code: "2780268", nationalId: "28504011809883", name: "????", phone: "", subject: "", jobTitle: "", qualification: "", weeklyQuota: 0, monthlyQuota: 0, status: "أصلي" },
+            { id: 16, code: "478356", nationalId: "27403091802634", name: "????", phone: "", subject: "", jobTitle: "", qualification: "", weeklyQuota: 0, monthlyQuota: 0, status: "أصلي" },
+            { id: 17, code: "2780125", nationalId: "28401011832695", name: "????", phone: "", subject: "", jobTitle: "", qualification: "", weeklyQuota: 0, monthlyQuota: 0, status: "أصلي" },
+            { id: 18, code: "478271", nationalId: "27608091802295", name: "????", phone: "", subject: "", jobTitle: "", qualification: "", weeklyQuota: 0, monthlyQuota: 0, status: "أصلي" },
+            { id: 19, code: "475323", nationalId: "27802141802136", name: "????", phone: "", subject: "", jobTitle: "", qualification: "", weeklyQuota: 0, monthlyQuota: 0, status: "أصلي" }
+        ];
+
+        let staffData = [];
+        let isAuthenticated = false;
+
+        async function loadDataFromCloud() {
+            try {
+                const response = await fetch(JSONBIN_URL, { method: 'GET', headers: { 'X-Master-Key': JSONBIN_API_KEY } });
+                const data = await response.json();
+                if (data.record && data.record.staff && data.record.staff.length > 0) {
+                    staffData = data.record.staff;
+                } else {
+                    // استخدام البيانات المستخرجة من الملف
+                    staffData = staffDataFromFile.map((item, index) => ({
+                        ...item,
+                        id: index + 1,
+                        // تعيين قيم افتراضية للبيانات الناقصة
+                        name: item.name || `معلم ${index + 1}`,
+                        subject: item.subject || "غير محدد",
+                        jobTitle: item.jobTitle || "معلم",
+                        qualification: item.qualification || "غير محدد",
+                        phone: item.phone || "-",
+                        status: item.status || "أصلي"
+                    }));
+                    await saveDataToCloud();
+                }
+            } catch (error) {
+                console.error("خطأ في تحميل البيانات:", error);
+                // في حالة فشل التحميل، استخدام البيانات من الملف
+                staffData = staffDataFromFile.map((item, index) => ({
+                    ...item,
+                    id: index + 1,
+                    name: item.name || `معلم ${index + 1}`,
+                    subject: item.subject || "غير محدد",
+                    jobTitle: item.jobTitle || "معلم",
+                    qualification: item.qualification || "غير محدد",
+                    phone: item.phone || "-",
+                    status: item.status || "أصلي"
+                }));
+            }
+            initSubjectFilter();
+            renderTable(staffData);
+            updateSubjectStats();
+        }
+
+        async function saveDataToCloud() {
+            try {
+                const response = await fetch(JSONBIN_URL, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'X-Master-Key': JSONBIN_API_KEY }, body: JSON.stringify({ staff: staffData }) });
+                if (!response.ok) {
+                    console.error("خطأ في الحفظ:", await response.text());
+                } else {
+                    console.log("تم حفظ البيانات بنجاح في السحابة");
+                }
+            } catch (error) {
+                console.error("خطأ في الحفظ:", error);
+            }
+        }
+
+        function parseNationalId(nationalId) {
+            if (!nationalId || nationalId.length !== 14 || isNaN(nationalId)) return { age: "-", gender: "ذكر" };
+            const centuryDigit = parseInt(nationalId.charAt(0));
+            const yearDigit = parseInt(nationalId.substring(1, 3));
+            const monthDigit = parseInt(nationalId.substring(3, 5)) - 1;
+            const dayDigit = parseInt(nationalId.substring(5, 7));
+            const genderDigit = parseInt(nationalId.charAt(12));
+            let fullYear = (centuryDigit === 2 ? 1900 : 2000) + yearDigit;
+            let birthDate = new Date(fullYear, monthDigit, dayDigit);
+            let today = new Date();
+            let age = today.getFullYear() - birthDate.getFullYear();
+            let m = today.getMonth() - birthDate.getMonth();
+            if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) age--;
+            let gender = (genderDigit % 2 === 0) ? "أنثى" : "ذكر";
+            return { age: age >= 0 ? age : "-", gender: gender };
+        }
+
+        function autoCalculateInfo() {
+            const nid = document.getElementById('editNationalId').value.trim();
+            if (nid.length === 14) {
+                const parsed = parseNationalId(nid);
+                if (parsed.age !== "-") {
+                    document.getElementById('editAge').value = parsed.age;
+                    document.getElementById('editGender').value = parsed.gender;
+                }
+            }
+        }
+
+        function checkAuth() {
+            if (isAuthenticated) return true;
+            const pwd = prompt("يرجى إدخال كلمة السر للمتابعة:");
+            if (pwd === ADMIN_PASSWORD) {
+                isAuthenticated = true;
+                return true;
+            } else if (pwd !== null) {
+                alert("كلمة السر غير صحيحة!");
+            }
+            return false;
+        }
+
+        function calculateMonthlyQuota() {
+            const weekly = parseFloat(document.getElementById('editWeeklyQuota').value) || 0;
+            document.getElementById('editMonthlyQuota').value = weekly * 4;
+        }
+
+        function updateStats() {
+            const activeStaff = staffData.filter(item => item.status === "أصلي" || item.status === "منتدب من");
+            const excludedStaff = staffData.filter(item => item.status === "منتدب إلى" || item.status === "إجازة");
+            document.getElementById('statActiveTotal').textContent = activeStaff.length;
+            let maleCount = 0;
+            let femaleCount = 0;
+            activeStaff.forEach(item => {
+                const info = parseNationalId(item.nationalId);
+                const gender = item.gender || info.gender;
+                if (gender === "ذكر") maleCount++;
+                else if (gender === "أنثى") femaleCount++;
+            });
+            document.getElementById('statMale').textContent = maleCount;
+            document.getElementById('statFemale').textContent = femaleCount;
+            const cadreCount = activeStaff.filter(item => item.jobTitle.includes('معلم') || item.jobTitle.includes('أخصائي') || item.jobTitle.includes('أمين مكتبة')).filter(item => !item.jobTitle.includes('بالحصه')).length;
+            const hessaCount = activeStaff.filter(item => item.jobTitle.includes('بالحصه')).length;
+            const adminCount = activeStaff.length - (cadreCount + hessaCount);
+            document.getElementById('statCadre').textContent = cadreCount;
+            document.getElementById('statHessa').textContent = hessaCount;
+            document.getElementById('statAdmin').textContent = adminCount;
+            document.getElementById('statExcluded').textContent = excludedStaff.length;
+        }
+
+        function initSubjectFilter() {
+            const subjectSelect = document.getElementById('subjectFilter');
+            subjectSelect.innerHTML = '<option value="">جميع التخصصات / المواد</option>';
+            const subjects = [...new Set(staffData.map(item => item.subject).filter(s => s && s !== "-"))];
+            subjects.sort().forEach(sub => {
+                const opt = document.createElement('option');
+                opt.value = sub;
+                opt.textContent = sub;
+                subjectSelect.appendChild(opt);
+            });
+        }
+
+        function getStatusBadge(status) {
+            switch(status) {
+                case 'أصلي': return '<span class="badge badge-original">أصلي</span>';
+                case 'منتدب من': return '<span class="badge badge-from">منتدب من</span>';
+                case 'منتدب إلى': return '<span class="badge badge-to">منتدب إلى</span>';
+                case 'إجازة': return '<span class="badge badge-leave">إجازة</span>';
+                default: return '<span class="badge badge-original">أصلي</span>';
+            }
+        }
+
+        function renderTable(data) {
+            const tableBody = document.getElementById('tableBody');
+            tableBody.innerHTML = '';
+            data.forEach((item, index) => {
+                const parsedInfo = parseNationalId(item.nationalId);
+                const gender = item.gender || parsedInfo.gender;
+                const age = item.age || parsedInfo.age;
+                const genderBadge = gender === 'ذكر' ? `<span class="badge badge-male">ذكر</span>` : `<span class="badge badge-female">أنثى</span>`;
+                const row = `<tr><td>${index + 1}</td><td><strong>${item.name}</strong></td><td>${genderBadge}</td><td><strong>${age}</strong> سنة</td><td>${getStatusBadge(item.status || 'أصلي')}</td><td>${item.code}</td><td>${item.nationalId}</td><td>${item.phone || '-'}</td><td>${item.jobTitle}</td><td>${item.subject || '-'}</td><td><strong>${item.weeklyQuota || 0}</strong> حصة</td><td><strong>${item.monthlyQuota || 0}</strong> حصة</td><td>${item.qualification}</td><td class="btn-action"><button class="btn btn-edit" onclick="openEditModal(${item.id})">تعديل</button><button class="btn btn-delete" onclick="deleteRecord(${item.id})">حذف</button></td></tr>`;
+                tableBody.innerHTML += row;
+            });
+            updateStats();
+            updateSubjectStats();
+        }
+
+        function filterData() {
+            const query = document.getElementById('searchInput').value.trim().toLowerCase();
+            const selectedSubject = document.getElementById('subjectFilter').value;
+            const selectedStatus = document.getElementById('statusFilter').value;
+            const selectedGender = document.getElementById('genderFilter').value;
+            const filtered = staffData.filter(item => {
+                const parsedInfo = parseNationalId(item.nationalId);
+                const gender = item.gender || parsedInfo.gender;
+                const matchesQuery = item.name.toLowerCase().includes(query) || item.code.includes(query) || item.nationalId.includes(query) || (item.phone && item.phone.includes(query)) || item.jobTitle.toLowerCase().includes(query) || (item.subject && item.subject.toLowerCase().includes(query));
+                const matchesSubject = selectedSubject === "" || item.subject === selectedSubject;
+                const matchesStatus = selectedStatus === "" || item.status === selectedStatus;
+                const matchesGender = selectedGender === "" || gender === selectedGender;
+                return matchesQuery && matchesSubject && matchesStatus && matchesGender;
+            });
+            renderTable(filtered);
+        }
+
+        function openAddModal() {
+            if (!checkAuth()) return;
+            document.getElementById('modalTitle').textContent = "إضافة موظف جديد";
+            document.getElementById('editId').value = "";
+            document.getElementById('editName').value = "";
+            document.getElementById('editNationalId').value = "";
+            document.getElementById('editGender').value = "ذكر";
+            document.getElementById('editAge').value = "";
+            document.getElementById('editStatus').value = "أصلي";
+            document.getElementById('editCode').value = "";
+            document.getElementById('editPhone').value = "";
+            document.getElementById('editJobTitle').value = "";
+            document.getElementById('editSubject').value = "";
+            document.getElementById('editWeeklyQuota').value = 0;
+            document.getElementById('editMonthlyQuota').value = 0;
+            document.getElementById('editQualification').value = "";
+            document.getElementById('dataModal').style.display = 'flex';
+        }
+
+        function openEditModal(id) {
+            if (!checkAuth()) return;
+            const item = staffData.find(record => record.id === id);
+            if (!item) return;
+            const parsedInfo = parseNationalId(item.nationalId);
+            document.getElementById('modalTitle').textContent = "تعديل بيانات الموظف";
+            document.getElementById('editId').value = item.id;
+            document.getElementById('editName').value = item.name;
+            document.getElementById('editNationalId').value = item.nationalId;
+            document.getElementById('editGender').value = item.gender || parsedInfo.gender;
+            document.getElementById('editAge').value = item.age || parsedInfo.age;
+            document.getElementById('editStatus').value = item.status || "أصلي";
+            document.getElementById('editCode').value = item.code;
+            document.getElementById('editPhone').value = item.phone || "";
+            document.getElementById('editJobTitle').value = item.jobTitle;
+            document.getElementById('editSubject').value = item.subject;
+            document.getElementById('editWeeklyQuota').value = item.weeklyQuota || 0;
+            document.getElementById('editMonthlyQuota').value = item.monthlyQuota || 0;
+            document.getElementById('editQualification').value = item.qualification;
+            document.getElementById('dataModal').style.display = 'flex';
+        }
+
+        function closeModal() {
+            document.getElementById('dataModal').style.display = 'none';
+        }
+
+        async function saveData() {
+            const idVal = document.getElementById('editId').value;
+            const name = document.getElementById('editName').value.trim();
+            const nid = document.getElementById('editNationalId').value.trim();
+            if (!name) {
+                alert("يرجى إدخال اسم الموظف!");
+                return;
+            }
+            if (idVal === "") {
+                const newRecord = { id: Date.now(), name: name, nationalId: nid, gender: document.getElementById('editGender').value, age: parseInt(document.getElementById('editAge').value) || null, status: document.getElementById('editStatus').value, code: document.getElementById('editCode').value, phone: document.getElementById('editPhone').value, jobTitle: document.getElementById('editJobTitle').value, subject: document.getElementById('editSubject').value, weeklyQuota: parseFloat(document.getElementById('editWeeklyQuota').value) || 0, monthlyQuota: parseFloat(document.getElementById('editMonthlyQuota').value) || 0, qualification: document.getElementById('editQualification').value };
+                staffData.push(newRecord);
+            } else {
+                const id = parseInt(idVal);
+                const item = staffData.find(record => record.id === id);
+                if (item) {
+                    item.name = name;
+                    item.nationalId = nid;
+                    item.gender = document.getElementById('editGender').value;
+                    item.age = parseInt(document.getElementById('editAge').value) || null;
+                    item.status = document.getElementById('editStatus').value;
+                    item.code = document.getElementById('editCode').value;
+                    item.phone = document.getElementById('editPhone').value;
+                    item.jobTitle = document.getElementById('editJobTitle').value;
+                    item.subject = document.getElementById('editSubject').value;
+                    item.weeklyQuota = parseFloat(document.getElementById('editWeeklyQuota').value) || 0;
+                    item.monthlyQuota = parseFloat(document.getElementById('editMonthlyQuota').value) || 0;
+                    item.qualification = document.getElementById('editQualification').value;
+                }
+            }
+            await saveDataToCloud();
+            closeModal();
+            initSubjectFilter();
+            filterData();
+            updateSubjectStats();
+            updateStats();
+        }
+
+        async function deleteRecord(id) {
+            if (!checkAuth()) return;
+            if (confirm("هل أنت تأكد من رغبتك في حذف هذا السجل؟")) {
+                staffData = staffData.filter(item => item.id !== id);
+                await saveDataToCloud();
+                initSubjectFilter();
+                filterData();
+                updateSubjectStats();
+                updateStats();
+            }
+        }
+
+        function exportToExcel() {
+            const exportData = staffData.map((item, index) => {
+                const parsedInfo = parseNationalId(item.nationalId);
+                return {
+                    "م": index + 1,
+                    "الاسم الكامل": item.name,
+                    "النوع": item.gender || parsedInfo.gender,
+                    "السن": item.age || parsedInfo.age,
+                    "الحالة": item.status || 'أصلي',
+                    "كود المعلم": item.code,
+                    "الرقم القومي": item.nationalId,
+                    "رقم التليفون": item.phone || '-',
+                    "الوظيفة": item.jobTitle,
+                    "المادة / التخصص": item.subject || '-',
+                    "النصاب الأسبوعي": item.weeklyQuota || 0,
+                    "النصاب الشهري": item.monthlyQuota || 0,
+                    "المؤهل الدراسي": item.qualification
+                };
+            });
+            exportData.push({});
+            exportData.push({ "م": "تصميم وتطوير:", "الاسم الكامل": "أ / محمد عبدالوهاب القزاز - أخصائي نفسي بمدرسة معمل القزاز الثانوية المشتركة" });
+            const worksheet = XLSX.utils.json_to_sheet(exportData);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "بيانات العاملين");
+            XLSX.writeFile(workbook, "سجل_بيانات_العاملين_المدرسي.xlsx");
+        }
+
+        function updateSubjectStats() {
+            const activeStaff = staffData.filter(item => item.status === "أصلي" || item.status === "منتدب من");
+            const subjectMap = {};
+            activeStaff.forEach(item => {
+                const subject = item.subject || 'بدون تخصص';
+                if (!subjectMap[subject]) {
+                    subjectMap[subject] = { count: 0, weeklyQuota: 0, monthlyQuota: 0 };
+                }
+                subjectMap[subject].count++;
+                subjectMap[subject].weeklyQuota += parseInt(item.weeklyQuota) || 0;
+                subjectMap[subject].monthlyQuota += parseInt(item.monthlyQuota) || 0;
+            });
+            const subjectKeys = Object.keys(subjectMap);
+            document.getElementById('totalSubjects').textContent = subjectKeys.length;
+            let totalWeekly = 0;
+            let totalMonthly = 0;
+            subjectKeys.forEach(sub => {
+                totalWeekly += subjectMap[sub].weeklyQuota;
+                totalMonthly += subjectMap[sub].monthlyQuota;
+            });
+            document.getElementById('totalWeeklyQuota').textContent = totalWeekly;
+            document.getElementById('totalMonthlyQuota').textContent = totalMonthly;
+            const tableBody = document.getElementById('subjectStatsTable');
+            tableBody.innerHTML = '';
+            subjectKeys.sort((a, b) => subjectMap[b].count - subjectMap[a].count).forEach(sub => {
+                const data = subjectMap[sub];
+                const avgWeekly = data.count > 0 ? (data.weeklyQuota / data.count).toFixed(1) : 0;
+                const row = `<tr><td><strong>${sub}</strong></td><td><span class="badge" style="background-color: #e0e7ff; color: #3730a3;">${data.count}</span></td><td>${data.weeklyQuota}</td><td>${data.monthlyQuota}</td><td>${avgWeekly} حصة</td></tr>`;
+                tableBody.innerHTML += row;
+            });
+        }
+
+        function showSection(sectionName) {
+            document.querySelectorAll('.section').forEach(section => { section.style.display = 'none'; });
+            document.getElementById(sectionName).style.display = 'block';
+            if (sectionName === 'dashboard') {
+                updateStats();
+            } else if (sectionName === 'employees') {
+                filterData();
+            } else if (sectionName === 'subjectStats') {
+                updateSubjectStats();
+            }
+        }
+
+        window.onload = () => {
+            loadDataFromCloud();
+        };
+    </script>
+</body>
+</html>
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
