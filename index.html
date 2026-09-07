@@ -6,30 +6,74 @@
     <title>إدارة بيانات هيئة التدريس والعاملين</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
-        :root { --primary-color: #1e3a8a; --secondary-color: #0284c7; --success-color: #16a34a; --danger-color: #dc2626; --warning-color: #d97706; --bg-color: #f8fafc; --text-color: #1e293b; }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: var(--bg-color); color: var(--text-color); margin: 0; padding: 20px; direction: rtl; }
-        .container { max-width: 1550px; margin: 0 auto; background: #ffffff; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); position: relative; padding-bottom: 60px; }
+        :root {
+            --primary-color: #1e3a8a;
+            --secondary-color: #0284c7;
+            --success-color: #16a34a;
+            --danger-color: #dc2626;
+            --warning-color: #d97706;
+            --bg-color: #f8fafc;
+            --text-color: #1e293b;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            direction: rtl;
+        }
+
+        .container {
+            max-width: 1550px;
+            margin: 0 auto;
+            background: #ffffff;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            position: relative;
+            padding-bottom: 60px;
+        }
+
         h1 { color: var(--primary-color); text-align: center; margin-bottom: 5px; }
         p.subtitle { text-align: center; color: #64748b; margin-top: 0; margin-bottom: 20px; }
-        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 25px; }
-        .stat-card { background: #f1f5f9; border-right: 4px solid var(--primary-color); padding: 12px; border-radius: 8px; }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 12px;
+            margin-bottom: 25px;
+        }
+
+        .stat-card {
+            background: #f1f5f9;
+            border-right: 4px solid var(--primary-color);
+            padding: 12px;
+            border-radius: 8px;
+        }
+
         .stat-card h3 { margin: 0; font-size: 0.8rem; color: #475569; }
         .stat-card .value { font-size: 1.4rem; font-weight: bold; color: var(--primary-color); margin-top: 4px; }
+
         .controls { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
         input[type="text"], input[type="number"], select { padding: 9px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.9rem; }
         input[type="text"] { flex: 2; min-width: 200px; }
         select { flex: 1; min-width: 140px; }
+
         .btn { padding: 9px 15px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; transition: 0.2s; }
         .btn-excel { background-color: var(--success-color); color: white; }
         .btn-add { background-color: var(--secondary-color); color: white; }
         .btn-print { background-color: var(--primary-color); color: white; }
         .btn-edit { background-color: var(--warning-color); color: white; padding: 5px 9px; font-size: 0.78rem; }
         .btn-delete { background-color: var(--danger-color); color: white; padding: 5px 9px; font-size: 0.78rem; }
+
         .table-responsive { overflow-x: auto; }
         table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.83rem; }
         th { background-color: var(--primary-color); color: white; padding: 10px 6px; text-align: center; }
         td { padding: 8px 6px; border-bottom: 1px solid #e2e8f0; white-space: nowrap; text-align: center; }
         tr:nth-child(even) { background-color: #f8fafc; }
+
         .badge { padding: 3px 7px; border-radius: 4px; font-weight: bold; font-size: 0.73rem; display: inline-block; }
         .badge-original { background-color: #dcfce7; color: #15803d; }
         .badge-from { background-color: #e0f2fe; color: #0369a1; }
@@ -37,6 +81,7 @@
         .badge-leave { background-color: #fee2e2; color: #b91c1c; }
         .badge-male { background-color: #e0e7ff; color: #3730a3; }
         .badge-female { background-color: #fce7f3; color: #9d174d; }
+
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 1000; }
         .modal-content { background: white; padding: 25px; border-radius: 10px; width: 540px; max-width: 90%; max-height: 90vh; overflow-y: auto; }
         .modal-content h3 { margin-top: 0; color: var(--primary-color); }
@@ -46,8 +91,25 @@
         .form-group label { display: block; font-size: 0.82rem; margin-bottom: 4px; font-weight: bold; }
         .form-group input, .form-group select { width: 100%; box-sizing: border-box; }
         .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 18px; }
-        .designer-footer { margin-top: 30px; padding: 12px; text-align: center; background: #f1f5f9; border-radius: 8px; color: #475569; font-size: 0.88rem; font-weight: bold; border-top: 2px solid var(--secondary-color); }
-        @media print { .controls, .stats-grid, .btn-action, .modal { display: none !important; } body { padding: 0; background: white; } .container { box-shadow: none; padding: 0; } .designer-footer { position: fixed; bottom: 0; width: 100%; background: white; border-top: 1px solid #ccc; } }
+
+        .designer-footer {
+            margin-top: 30px;
+            padding: 12px;
+            text-align: center;
+            background: #f1f5f9;
+            border-radius: 8px;
+            color: #475569;
+            font-size: 0.88rem;
+            font-weight: bold;
+            border-top: 2px solid var(--secondary-color);
+        }
+
+        @media print {
+            .controls, .stats-grid, .btn-action, .modal { display: none !important; }
+            body { padding: 0; background: white; }
+            .container { box-shadow: none; padding: 0; }
+            .designer-footer { position: fixed; bottom: 0; width: 100%; background: white; border-top: 1px solid #ccc; }
+        }
     </style>
 </head>
 <body>
@@ -133,6 +195,7 @@
         const JSONBIN_API_KEY = "$2a$10$UIsR.ywSeF2FO3hGxydn8upy6GizBVc3x.LhGexSy3S3/GgXy2Ev2";
         const JSONBIN_BIN_ID = "6a9c9723f5f4af5e296f8a7c";
         const JSONBIN_URL = `https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}`;
+
         const defaultStaffData = [
             { id: 1, code: "3470613", nationalId: "30009281800215", name: "ابراهيم عبد الرازق عبد الونيس منبي خليف", phone: "-", subject: "كيمياء", jobTitle: "معلم بالحصه", jobDate: "", qualification: "بكالوريوس علوم وتربية", weeklyQuota: 18, monthlyQuota: 72, status: "أصلي" },
             { id: 2, code: "478529", nationalId: "27905281801419", name: "احمد ايوب محمود الحناوي", phone: "-", subject: "الفلسفة والمنطق", jobTitle: "معلم أول أ", jobDate: "2023-05-30", qualification: "ليسانس اداب وحاصل على دبلومة تربوية", weeklyQuota: 16, monthlyQuota: 64, status: "أصلي" },
@@ -204,8 +267,10 @@
             { id: 68, code: "475859", nationalId: "27008231801718", name: "ياسر زغلول السنوسي بلبع", phone: "-", subject: "تربية رياضية", jobTitle: "كبير معلمين", jobDate: "2021-01-18", qualification: "بكالوريوس تربية رياضية", weeklyQuota: 14, monthlyQuota: 56, status: "أصلي" },
             { id: 69, code: "2662532", nationalId: "28310181801969", name: "يسرا محمد عبد الله متولى ابويوسف", phone: "-", subject: "لغة عربية ودين", jobTitle: "معلم أول", jobDate: "2021-01-18", qualification: "ليسانس اداب وتربية", weeklyQuota: 18, monthlyQuota: 72, status: "أصلي" }
         ];
+
         let staffData = [];
         let isAuthenticated = false;
+
         async function loadDataFromCloud() {
             try {
                 const response = await fetch(JSONBIN_URL, { method: 'GET', headers: { 'X-Master-Key': JSONBIN_API_KEY } });
@@ -223,6 +288,7 @@
             renderTable(staffData);
             updateSubjectStats();
         }
+
         async function saveDataToCloud() {
             try {
                 const response = await fetch(JSONBIN_URL, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'X-Master-Key': JSONBIN_API_KEY }, body: JSON.stringify({ staff: staffData }) });
@@ -235,6 +301,7 @@
                 console.error("خطأ في الحفظ:", error);
             }
         }
+
         function parseNationalId(nationalId) {
             if (!nationalId || nationalId.length !== 14 || isNaN(nationalId)) return { age: "-", gender: "ذكر" };
             const centuryDigit = parseInt(nationalId.charAt(0));
@@ -251,6 +318,7 @@
             let gender = (genderDigit % 2 === 0) ? "أنثى" : "ذكر";
             return { age: age >= 0 ? age : "-", gender: gender };
         }
+
         function autoCalculateInfo() {
             const nid = document.getElementById('editNationalId').value.trim();
             if (nid.length === 14) {
@@ -261,6 +329,7 @@
                 }
             }
         }
+
         function checkAuth() {
             if (isAuthenticated) return true;
             const pwd = prompt("يرجى إدخال كلمة السر للمتابعة:");
@@ -272,10 +341,12 @@
             }
             return false;
         }
+
         function calculateMonthlyQuota() {
             const weekly = parseFloat(document.getElementById('editWeeklyQuota').value) || 0;
             document.getElementById('editMonthlyQuota').value = weekly * 4;
         }
+
         function updateStats() {
             const activeStaff = staffData.filter(item => item.status === "أصلي" || item.status === "منتدب من");
             const excludedStaff = staffData.filter(item => item.status === "منتدب إلى" || item.status === "إجازة");
@@ -298,6 +369,7 @@
             document.getElementById('statAdmin').textContent = adminCount;
             document.getElementById('statExcluded').textContent = excludedStaff.length;
         }
+
         function initSubjectFilter() {
             const subjectSelect = document.getElementById('subjectFilter');
             subjectSelect.innerHTML = '<option value="">جميع التخصصات / المواد</option>';
@@ -309,6 +381,7 @@
                 subjectSelect.appendChild(opt);
             });
         }
+
         function getStatusBadge(status) {
             switch(status) {
                 case 'أصلي': return '<span class="badge badge-original">أصلي</span>';
@@ -318,6 +391,7 @@
                 default: return '<span class="badge badge-original">أصلي</span>';
             }
         }
+
         function renderTable(data) {
             const tableBody = document.getElementById('tableBody');
             tableBody.innerHTML = '';
@@ -332,6 +406,7 @@
             updateStats();
             updateSubjectStats();
         }
+
         function filterData() {
             const query = document.getElementById('searchInput').value.trim().toLowerCase();
             const selectedSubject = document.getElementById('subjectFilter').value;
@@ -348,6 +423,7 @@
             });
             renderTable(filtered);
         }
+
         function openAddModal() {
             if (!checkAuth()) return;
             document.getElementById('modalTitle').textContent = "إضافة موظف جديد";
@@ -367,6 +443,7 @@
             document.getElementById('editQualification').value = "";
             document.getElementById('dataModal').style.display = 'flex';
         }
+
         function openEditModal(id) {
             if (!checkAuth()) return;
             const item = staffData.find(record => record.id === id);
@@ -389,9 +466,11 @@
             document.getElementById('editQualification').value = item.qualification;
             document.getElementById('dataModal').style.display = 'flex';
         }
+
         function closeModal() {
             document.getElementById('dataModal').style.display = 'none';
         }
+
         async function saveData() {
             const idVal = document.getElementById('editId').value;
             const name = document.getElementById('editName').value.trim();
@@ -429,6 +508,7 @@
             updateSubjectStats();
             updateStats();
         }
+
         async function deleteRecord(id) {
             if (!checkAuth()) return;
             if (confirm("هل أنت تأكد من رغبتك في حذف هذا السجل؟")) {
@@ -440,6 +520,7 @@
                 updateStats();
             }
         }
+
         function exportToExcel() {
             const exportData = staffData.map((item, index) => {
                 const parsedInfo = parseNationalId(item.nationalId);
@@ -467,16 +548,20 @@
             XLSX.utils.book_append_sheet(workbook, worksheet, "بيانات العاملين");
             XLSX.writeFile(workbook, "سجل_بيانات_العاملين_المدرسي.xlsx");
         }
+
         function printEmployeeStatement(id) {
             const item = staffData.find(record => record.id === id);
             if (!item) {
                 alert("الموظف غير موجود!");
                 return;
             }
+
             const parsedInfo = parseNationalId(item.nationalId);
             const gender = item.gender || parsedInfo.gender;
             const age = item.age || parsedInfo.age;
+
             const printWindow = window.open('', '_blank', 'width=800,height=900');
+            
             printWindow.document.write(`
                 <!DOCTYPE html>
                 <html lang="ar" dir="rtl">
@@ -503,6 +588,7 @@
                         .signature-box { text-align: center; width: 200px; }
                         .signature-box .line { border-bottom: 2px solid #333; margin-top: 50px; margin-bottom: 10px; }
                         .print-btn { position: fixed; top: 20px; left: 20px; background: #1e3a8a; color: white; border: none; padding: 12px 24px; border-radius: 8px; font-size: 16px; cursor: pointer; font-weight: bold; }
+                        .print-btn:hover { background: #172554; }
                         .no-print { position: fixed; top: 20px; right: 20px; background: #dc2626; color: white; border: none; padding: 12px 24px; border-radius: 8px; font-size: 16px; cursor: pointer; font-weight: bold; }
                         @media print { .print-btn, .no-print { display: none !important; } body { padding: 0; margin: 0; } .signature-box .line { border-bottom: 1px solid #333; } }
                     </style>
@@ -510,6 +596,7 @@
                 <body>
                     <button class="print-btn" onclick="window.print()">🖨️ طباعة</button>
                     <button class="no-print" onclick="window.close()">✖ إغلاق</button>
+                    
                     <div class="header">
                         <h1>جمهورية مصر العربية</h1>
                         <h2>وزارة التربية والتعليم والتعليم الفني</h2>
@@ -517,6 +604,7 @@
                         <h2>إدارة كفر الدوار التعليمية</h2>
                         <h3>مدرسة معمل القزاز الثانوية المشتركة</h3>
                     </div>
+                    
                     <div class="employee-info">
                         <h3>📋 بيان حالة موظف</h3>
                         <div class="info-grid">
@@ -535,22 +623,27 @@
                             <div class="info-item"><label>المؤهل الدراسي:</label><div class="value">${item.qualification}</div></div>
                         </div>
                     </div>
+                    
                     <div class="signatures">
                         <div class="signature-box"><p>توقيع الموظف</p><div class="line"></div></div>
                         <div class="signature-box"><p>توقيع مدير شؤون العاملين</p><div class="line"></div></div>
                         <div class="signature-box"><p>توقيع مدير المدرسة</p><div class="line"></div></div>
                     </div>
+                    
                     <div style="text-align: center; margin-top: 30px; color: #64748b; font-size: 12px;">
                         تم إنشاء هذا البيان بواسطة نظام إدارة بيانات هيئة التدريس - معمل القزاز الثانوية المشتركة
                     </div>
+                    
                     <script>
                         window.onload = function() { window.print(); };
                     </script>
                 </body>
                 </html>
             `);
+            
             printWindow.document.close();
         }
+
         function updateSubjectStats() {
             const activeStaff = staffData.filter(item => item.status === "أصلي" || item.status === "منتدب من");
             const subjectMap = {};
@@ -582,6 +675,7 @@
                 tableBody.innerHTML += row;
             });
         }
+
         function showSection(sectionName) {
             document.querySelectorAll('.section').forEach(section => { section.style.display = 'none'; });
             document.getElementById(sectionName).style.display = 'block';
@@ -593,6 +687,7 @@
                 updateSubjectStats();
             }
         }
+
         window.onload = () => {
             loadDataFromCloud();
         };
