@@ -321,4 +321,231 @@
             if (!checkAuth()) return;
             const item = staffData.find(record => record.id === id);
             if (!item) return;
-            const parsedInfo = parse
+            const parsedInfo = parseNationalId(item.nationalId);
+            document.getElementById('modalTitle').textContent = "تعديل بيانات الموظف";
+            document.getElementById('editId').value = item.id;
+            document.getElementById('editName').value = item.name;
+            document.getElementById('editNationalId').value = item.nationalId;
+            document.getElementById('editGender').value = item.gender || parsedInfo.gender;
+            document.getElementById('editAge').value = item.age || parsedInfo.age;
+            document.getElementById('editStatus').value = item.status || "أصلي";
+            document.getElementById('editCode').value = item.code;
+            document.getElementById('editJobTitle').value = item.jobTitle;
+            document.getElementById('editJobDate').value = item.jobDate || "";
+            document.getElementById('editPhone').value = item.phone || "";
+            document.getElementById('editSubject').value = item.subject;
+            document.getElementById('editWeeklyQuota').value = item.weeklyQuota || 0;
+            document.getElementById('editMonthlyQuota').value = item.monthlyQuota || 0;
+            document.getElementById('editQualification').value = item.qualification;
+            document.getElementById('dataModal').style.display = 'flex';
+        }
+        function closeModal() {
+            document.getElementById('dataModal').style.display = 'none';
+        }
+        async function saveData() {
+            const idVal = document.getElementById('editId').value;
+            const name = document.getElementById('editName').value.trim();
+            const nid = document.getElementById('editNationalId').value.trim();
+            if (!name) {
+                alert("يرجى إدخال اسم الموظف!");
+                return;
+            }
+            if (idVal === "") {
+                const newRecord = { id: Date.now(), name: name, nationalId: nid, gender: document.getElementById('editGender').value, age: parseInt(document.getElementById('editAge').value) || null, status: document.getElementById('editStatus').value, code: document.getElementById('editCode').value, jobTitle: document.getElementById('editJobTitle').value, jobDate: document.getElementById('editJobDate').value, phone: document.getElementById('editPhone').value, subject: document.getElementById('editSubject').value, weeklyQuota: parseFloat(document.getElementById('editWeeklyQuota').value) || 0, monthlyQuota: parseFloat(document.getElementById('editMonthlyQuota').value) || 0, qualification: document.getElementById('editQualification').value };
+                staffData.push(newRecord);
+            } else {
+                const id = parseInt(idVal);
+                const item = staffData.find(record => record.id === id);
+                if (item) {
+                    item.name = name;
+                    item.nationalId = nid;
+                    item.gender = document.getElementById('editGender').value;
+                    item.age = parseInt(document.getElementById('editAge').value) || null;
+                    item.status = document.getElementById('editStatus').value;
+                    item.code = document.getElementById('editCode').value;
+                    item.jobTitle = document.getElementById('editJobTitle').value;
+                    item.jobDate = document.getElementById('editJobDate').value;
+                    item.phone = document.getElementById('editPhone').value;
+                    item.subject = document.getElementById('editSubject').value;
+                    item.weeklyQuota = parseFloat(document.getElementById('editWeeklyQuota').value) || 0;
+                    item.monthlyQuota = parseFloat(document.getElementById('editMonthlyQuota').value) || 0;
+                    item.qualification = document.getElementById('editQualification').value;
+                }
+            }
+            await saveDataToCloud();
+            closeModal();
+            initSubjectFilter();
+            filterData();
+            updateSubjectStats();
+            updateStats();
+        }
+        async function deleteRecord(id) {
+            if (!checkAuth()) return;
+            if (confirm("هل أنت تأكد من رغبتك في حذف هذا السجل؟")) {
+                staffData = staffData.filter(item => item.id !== id);
+                await saveDataToCloud();
+                initSubjectFilter();
+                filterData();
+                updateSubjectStats();
+                updateStats();
+            }
+        }
+        function exportToExcel() {
+            const exportData = staffData.map((item, index) => {
+                const parsedInfo = parseNationalId(item.nationalId);
+                return {
+                    "م": index + 1,
+                    "الاسم الكامل": item.name,
+                    "النوع": item.gender || parsedInfo.gender,
+                    "السن": item.age || parsedInfo.age,
+                    "الحالة": item.status || 'أصلي',
+                    "الوظيفة الحالية": item.jobTitle,
+                    "تاريخ الوظيفة": item.jobDate || '',
+                    "كود المعلم": item.code,
+                    "الرقم القومي": item.nationalId,
+                    "رقم التليفون": item.phone || '-',
+                    "المادة / التخصص": item.subject || '-',
+                    "النصاب الأسبوعي": item.weeklyQuota || 0,
+                    "النصاب الشهري": item.monthlyQuota || 0,
+                    "المؤهل الدراسي": item.qualification
+                };
+            });
+            exportData.push({});
+            exportData.push({ "م": "تصميم وتطوير:", "الاسم الكامل": "أ / محمد عبدالوهاب القزاز" });
+            const worksheet = XLSX.utils.json_to_sheet(exportData);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "بيانات العاملين");
+            XLSX.writeFile(workbook, "سجل_بيانات_العاملين_المدرسي.xlsx");
+        }
+        function printEmployeeStatement(id) {
+            const item = staffData.find(record => record.id === id);
+            if (!item) {
+                alert("الموظف غير موجود!");
+                return;
+            }
+            const parsedInfo = parseNationalId(item.nationalId);
+            const gender = item.gender || parsedInfo.gender;
+            const age = item.age || parsedInfo.age;
+            const printWindow = window.open('', '_blank', 'width=800,height=900');
+            printWindow.document.write(`
+                <!DOCTYPE html>
+                <html lang="ar" dir="rtl">
+                <head>
+                    <meta charset="UTF-8">
+                    <title>بيان حالة موظف - ${item.name}</title>
+                    <style>
+                        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; direction: rtl; padding: 20px; background: white; color: #1e293b; }
+                        .header { text-align: center; border-bottom: 3px solid #1e3a8a; padding-bottom: 15px; margin-bottom: 20px; }
+                        .header h1 { color: #1e3a8a; margin: 0; font-size: 24px; }
+                        .header h2 { color: #64748b; margin: 5px 0 0 0; font-size: 16px; }
+                        .employee-info { border: 2px solid #e2e8f0; border-radius: 10px; padding: 20px; margin-bottom: 20px; }
+                        .employee-info h3 { color: #1e3a8a; margin-top: 0; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px; }
+                        .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+                        .info-item { margin-bottom: 10px; }
+                        .info-item label { font-weight: bold; color: #475569; display: block; margin-bottom: 3px; font-size: 13px; }
+                        .info-item .value { font-size: 15px; color: #1e293b; }
+                        .status-badge { display: inline-block; padding: 5px 10px; border-radius: 20px; font-weight: bold; font-size: 13px; }
+                        .status-original { background: #dcfce7; color: #15803d; }
+                        .status-from { background: #e0f2fe; color: #0369a1; }
+                        .status-to { background: #fef3c7; color: #b45309; }
+                        .status-leave { background: #fee2e2; color: #b91c1c; }
+                        .signatures { display: flex; justify-content: space-between; margin-top: 50px; }
+                        .signature-box { text-align: center; width: 200px; }
+                        .signature-box .line { border-bottom: 2px solid #333; margin-top: 50px; margin-bottom: 10px; }
+                        .print-btn { position: fixed; top: 20px; left: 20px; background: #1e3a8a; color: white; border: none; padding: 12px 24px; border-radius: 8px; font-size: 16px; cursor: pointer; font-weight: bold; }
+                        .no-print { position: fixed; top: 20px; right: 20px; background: #dc2626; color: white; border: none; padding: 12px 24px; border-radius: 8px; font-size: 16px; cursor: pointer; font-weight: bold; }
+                        @media print { .print-btn, .no-print { display: none !important; } body { padding: 0; margin: 0; } .signature-box .line { border-bottom: 1px solid #333; } }
+                    </style>
+                </head>
+                <body>
+                    <button class="print-btn" onclick="window.print()">🖨️ طباعة</button>
+                    <button class="no-print" onclick="window.close()">✖ إغلاق</button>
+                    <div class="header">
+                        <h1>جمهورية مصر العربية</h1>
+                        <h2>وزارة التربية والتعليم والتعليم الفني</h2>
+                        <h2>مديرية التربية والتعليم</h2>
+                        <h2>إدارة كفر الدوار التعليمية</h2>
+                        <h3>مدرسة كدرة الكربون تعليم أساسي</h3>
+                    </div>
+                    <div class="employee-info">
+                        <h3>📋 بيان حالة موظف</h3>
+                        <div class="info-grid">
+                            <div class="info-item"><label>الاسم الكامل:</label><div class="value"><strong>${item.name}</strong></div></div>
+                            <div class="info-item"><label>النوع:</label><div class="value">${gender}</div></div>
+                            <div class="info-item"><label>السن:</label><div class="value">${age} سنة</div></div>
+                            <div class="info-item"><label>الحالة:</label><div class="value"><span class="status-badge status-${item.status === 'أصلي' ? 'original' : item.status === 'منتدب من' ? 'from' : item.status === 'منتدب إلى' ? 'to' : 'leave'}">${item.status || 'أصلي'}</span></div></div>
+                            <div class="info-item"><label>الوظيفة الحالية:</label><div class="value">${item.jobTitle}</div></div>
+                            <div class="info-item"><label>تاريخ الوظيفة الحالية:</label><div class="value">${item.jobDate || '-'}</div></div>
+                            <div class="info-item"><label>كود المعلم:</label><div class="value">${item.code}</div></div>
+                            <div class="info-item"><label>الرقم القومي:</label><div class="value">${item.nationalId}</div></div>
+                            <div class="info-item"><label>رقم التليفون:</label><div class="value">${item.phone || '-'}</div></div>
+                            <div class="info-item"><label>المادة / التخصص:</label><div class="value">${item.subject || '-'}</div></div>
+                            <div class="info-item"><label>النصاب الأسبوعي:</label><div class="value">${item.weeklyQuota || 0} حصة</div></div>
+                            <div class="info-item"><label>النصاب الشهري:</label><div class="value">${item.monthlyQuota || 0} حصة</div></div>
+                            <div class="info-item"><label>المؤهل الدراسي:</label><div class="value">${item.qualification}</div></div>
+                        </div>
+                    </div>
+                    <div class="signatures">
+                        <div class="signature-box"><p>توقيع الموظف</p><div class="line"></div></div>
+                        <div class="signature-box"><p>توقيع مدير شؤون العاملين</p><div class="line"></div></div>
+                        <div class="signature-box"><p>توقيع مدير المدرسة</p><div class="line"></div></div>
+                    </div>
+                    <div style="text-align: center; margin-top: 30px; color: #64748b; font-size: 12px;">
+                        تم إنشاء هذا البيان بواسطة نظام إدارة بيانات هيئة التدريس - كدرة الكربون
+                    </div>
+                    <script>
+                        window.onload = function() { window.print(); };
+                    </script>
+                </body>
+                </html>
+            `);
+            printWindow.document.close();
+        }
+        function updateSubjectStats() {
+            const activeStaff = staffData.filter(item => item.status === "أصلي" || item.status === "منتدب من");
+            const subjectMap = {};
+            activeStaff.forEach(item => {
+                const subject = item.subject || 'بدون تخصص';
+                if (!subjectMap[subject]) {
+                    subjectMap[subject] = { count: 0, weeklyQuota: 0, monthlyQuota: 0 };
+                }
+                subjectMap[subject].count++;
+                subjectMap[subject].weeklyQuota += parseInt(item.weeklyQuota) || 0;
+                subjectMap[subject].monthlyQuota += parseInt(item.monthlyQuota) || 0;
+            });
+            const subjectKeys = Object.keys(subjectMap);
+            document.getElementById('totalSubjects').textContent = subjectKeys.length;
+            let totalWeekly = 0;
+            let totalMonthly = 0;
+            subjectKeys.forEach(sub => {
+                totalWeekly += subjectMap[sub].weeklyQuota;
+                totalMonthly += subjectMap[sub].monthlyQuota;
+            });
+            document.getElementById('totalWeeklyQuota').textContent = totalWeekly;
+            document.getElementById('totalMonthlyQuota').textContent = totalMonthly;
+            const tableBody = document.getElementById('subjectStatsTable');
+            tableBody.innerHTML = '';
+            subjectKeys.sort((a, b) => subjectMap[b].count - subjectMap[a].count).forEach(sub => {
+                const data = subjectMap[sub];
+                const avgWeekly = data.count > 0 ? (data.weeklyQuota / data.count).toFixed(1) : 0;
+                const row = `<tr><td><strong>${sub}</strong></td><td><span class="badge" style="background-color: #e0e7ff; color: #3730a3;">${data.count}</span></td><td>${data.weeklyQuota}</td><td>${data.monthlyQuota}</td><td>${avgWeekly} حصة</td></tr>`;
+                tableBody.innerHTML += row;
+            });
+        }
+        function showSection(sectionName) {
+            document.querySelectorAll('.section').forEach(section => { section.style.display = 'none'; });
+            document.getElementById(sectionName).style.display = 'block';
+            if (sectionName === 'dashboard') {
+                updateStats();
+            } else if (sectionName === 'employees') {
+                filterData();
+            } else if (sectionName === 'subjectStats') {
+                updateSubjectStats();
+            }
+        }
+        window.onload = () => {
+            loadDataFromCloud();
+        };
+    </script>
+</body>
+</html>
