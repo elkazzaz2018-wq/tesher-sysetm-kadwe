@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>إدارة بيانات هيئة التدريس والميزانية - كدرة الكربون</title>
+    <title>إدارة بيانات هيئة التدريس والميزانية والحافز - كدرة الكربون</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         :root { 
@@ -56,6 +56,8 @@
         .badge-leave { background-color: #fee2e2; color: #b91c1c; }
         .badge-male { background-color: #e0e7ff; color: #3730a3; }
         .badge-female { background-color: #fce7f3; color: #9d174d; }
+        .badge-eligible { background-color: #dcfce7; color: #15803d; font-size: 0.85rem; }
+        .badge-ineligible { background-color: #fee2e2; color: #b91c1c; font-size: 0.85rem; }
 
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 1000; }
         .modal-content { background: white; padding: 25px; border-radius: 10px; width: 620px; max-width: 95%; max-height: 90vh; overflow-y: auto; }
@@ -76,7 +78,7 @@
 <body>
     <div class="container">
         <h1>مدرسة كدرة الكربون تعليم أساسي</h1>
-        <p class="subtitle">نظام إدارة السجلات والميزانية والمراحل التعليمية</p>
+        <p class="subtitle">نظام إدارة السجلات والميزانية والمراحل التعليمية وحافز المعلمين</p>
         
         <div id="statusNotification"></div>
 
@@ -89,6 +91,7 @@
         <nav style="background: #f1f5f9; padding: 10px; border-radius: 8px; margin-bottom: 20px;">
             <button class="btn" style="background: var(--primary-color); color: white;" onclick="showSection('dashboard')">الرئيسية والإحصاء</button>
             <button class="btn" style="background: var(--secondary-color); color: white;" onclick="showSection('employees')">سجل الموظفين</button>
+            <button class="btn" style="background: #8b5cf6; color: white;" onclick="showSection('teacherBonus')">🏆 حافز المعلمين</button>
             <button class="btn" style="background: var(--success-color); color: white;" onclick="showSection('subjectStats')">إحصائيات المواد</button>
         </nav>
 
@@ -98,7 +101,7 @@
                 <div class="stat-card"><h3>عدد الذكور</h3><div class="value" id="statMale" style="color: #3730a3;">0</div></div>
                 <div class="stat-card"><h3>عدد الإناث</h3><div class="value" id="statFemale" style="color: #9d174d;">0</div></div>
                 <div class="stat-card"><h3>معلمون على الكادر</h3><div class="value" id="statCadre">0</div></div>
-                <div class="stat-card"><h3>معلمون بالحصة</h3><div class="value" id="statHessa">0</div></div>
+                <div class="stat-card"><h3>مستحقو الحافز</h3><div class="value" id="statEligible" style="color: var(--success-color);">0</div></div>
                 <div class="stat-card"><h3>الوظائف المعاونة</h3><div class="value" id="statAdmin">0</div></div>
                 <div class="stat-card" style="border-right-color: var(--danger-color);"><h3>مستبعدون</h3><div class="value" id="statExcluded" style="color: var(--danger-color);">0</div></div>
             </div>
@@ -143,12 +146,40 @@
             </div>
         </div>
 
+        <!-- قسم حافز المعلمين -->
+        <div id="teacherBonus" class="section" style="display:none;">
+            <h2 style="color: var(--primary-color); margin-bottom: 15px;">🏅 سجل حافز المعلمين (الابتدائي والإعدادي)</h2>
+            <div class="controls">
+                <input type="text" id="searchBonusInput" onkeyup="filterBonusData()" placeholder="ابحث باسم المعلم أو الرقم القومي...">
+                <button class="btn btn-excel" onclick="exportBonusToExcel()">تصدير جدول الحافز 📊</button>
+                <button class="btn btn-print" onclick="window.print()">طباعة كشف الحافز 🖨️</button>
+            </div>
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>م</th>
+                            <th>الاسم</th>
+                            <th>الرقم القومي</th>
+                            <th>النصاب الأسبوعي</th>
+                            <th>النصاب الشهرى</th>
+                            <th>النصاب الفعلي</th>
+                            <th>عدد أيام الغياب</th>
+                            <th>عدد أيام الحضور</th>
+                            <th>يستحق - لا يستحق</th>
+                        </tr>
+                    </thead>
+                    <tbody id="bonusTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+
         <div id="subjectStats" class="section" style="display:none;">
             <h2 style="color: var(--primary-color); margin-bottom: 20px;">📊 إحصائيات المواد والتخصصات الميزانية</h2>
             <div class="stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));">
                 <div class="stat-card" style="border-right-color: var(--secondary-color);"><h3>عدد المواد</h3><div class="value" id="totalSubjects">0</div></div>
                 <div class="stat-card" style="border-right-color: var(--success-color);"><h3>إجمالي الحصص الأسبوعية</h3><div class="value" id="totalWeeklyQuota">0</div></div>
-                <div class="stat-card" style="border-right-color: var(--warning-color);"><h3>إجمالي الحصص الشهرية</h3><div class="value" id="totalMonthlyQuota">0</div></div>
+                <div class="stat-card" style="border-right-color: var(--warning-color);"><h3>إجمالي الحصص الشهري</h3><div class="value" id="totalMonthlyQuota">0</div></div>
             </div>
             <div class="card" style="background: white; padding: 15px; border-radius: 8px; margin-top: 15px;">
                 <h3 style="color: var(--primary-color); margin-bottom: 10px;">جدول توزيع ميزانية المواد</h3>
@@ -194,6 +225,9 @@
                 <div class="form-group"><label>التخصص / المادة</label><input type="text" id="editSubject"></div>
                 <div class="form-group"><label>النصاب الأسبوعي (حصص)</label><input type="number" id="editWeeklyQuota" oninput="calculateMonthlyQuota()" value="0"></div>
                 <div class="form-group"><label>النصاب الشهري</label><input type="number" id="editMonthlyQuota" value="0"></div>
+                <div class="form-group"><label>النصاب الفعلي (حصص)</label><input type="number" id="editActualQuota" value="0"></div>
+                <div class="form-group"><label>عدد أيام الغياب</label><input type="number" id="editAbsenceDays" oninput="calculateAttendanceDays()" value="0"></div>
+                <div class="form-group"><label>عدد أيام الحضور</label><input type="number" id="editAttendanceDays" value="22"></div>
                 <div class="form-group full-width"><label>المؤهل الدراسي</label><input type="text" id="editQualification"></div>
             </div>
             <div class="modal-actions">
@@ -228,6 +262,7 @@
             document.getElementById('btnStagePrimary').classList.toggle('active', stage === 'الابتدائية');
             document.getElementById('btnStagePrep').classList.toggle('active', stage === 'الإعدادية');
             filterData();
+            renderBonusTable();
             updateStats();
             updateSubjectStats();
         }
@@ -297,6 +332,7 @@
             }
             initSubjectFilter();
             filterData();
+            renderBonusTable();
             updateStats();
             updateSubjectStats();
         }
@@ -335,11 +371,28 @@
         function calculateMonthlyQuota() {
             const weekly = parseFloat(document.getElementById('editWeeklyQuota').value) || 0;
             document.getElementById('editMonthlyQuota').value = weekly * 4;
+            if (document.getElementById('editActualQuota').value == 0) {
+                document.getElementById('editActualQuota').value = weekly * 4;
+            }
+        }
+
+        function calculateAttendanceDays() {
+            const absence = parseInt(document.getElementById('editAbsenceDays').value) || 0;
+            document.getElementById('editAttendanceDays').value = Math.max(0, 22 - absence);
         }
 
         function getFilteredByStageData() {
             if (currentStageFilter === "الكل") return staffData;
             return staffData.filter(item => (item.stage || 'الإعدادية') === currentStageFilter);
+        }
+
+        function isEligibleForBonus(item) {
+            const absence = parseInt(item.absenceDays) || 0;
+            const actualQuota = parseFloat(item.actualQuota) || 0;
+            const monthlyQuota = parseFloat(item.monthlyQuota) || (parseFloat(item.weeklyQuota || 0) * 4);
+            const activeStatus = item.status === "أصلي" || item.status === "منتدب من";
+            
+            return activeStatus && (absence <= 3) && (monthlyQuota > 0 ? actualQuota >= (monthlyQuota * 0.75) : true);
         }
 
         function updateStats() {
@@ -351,26 +404,29 @@
 
             let maleCount = 0;
             let femaleCount = 0;
+            let eligibleCount = 0;
+
             activeStaff.forEach(item => {
                 const info = parseNationalId(item.nationalId);
                 const gender = item.gender || info.gender;
                 if (gender === "ذكر") maleCount++;
                 else if (gender === "أنثى") femaleCount++;
+
+                if (isEligibleForBonus(item)) eligibleCount++;
             });
 
             document.getElementById('statMale').textContent = maleCount;
             document.getElementById('statFemale').textContent = femaleCount;
+            document.getElementById('statEligible').textContent = eligibleCount;
 
             const cadreCount = activeStaff.filter(item => 
-                (item.jobGroup === "التعليم والتدريس" || item.jobTitle.includes('معلم') || item.jobTitle.includes('أخصائي')) && 
-                !item.jobTitle.includes('بالحصة')
+                (item.jobGroup === "التعليم والتدريس" || (item.jobTitle && (item.jobTitle.includes('معلم') || item.jobTitle.includes('أخصائي')))) && 
+                !(item.jobTitle && item.jobTitle.includes('بالحصة'))
             ).length;
 
-            const hessaCount = activeStaff.filter(item => item.jobTitle.includes('بالحصة')).length;
-            const adminCount = activeStaff.length - (cadreCount + hessaCount);
+            const adminCount = activeStaff.length - cadreCount;
 
             document.getElementById('statCadre').textContent = cadreCount;
-            document.getElementById('statHessa').textContent = hessaCount;
             document.getElementById('statAdmin').textContent = adminCount;
             document.getElementById('statExcluded').textContent = excludedStaff.length;
         }
@@ -440,6 +496,49 @@
             });
         }
 
+        // عرض جدول حافز المعلمين
+        function renderBonusTable(filteredList = null) {
+            const list = filteredList || getFilteredByStageData();
+            const bonusBody = document.getElementById('bonusTableBody');
+            bonusBody.innerHTML = '';
+
+            list.forEach((item, index) => {
+                const weeklyQuota = parseFloat(item.weeklyQuota) || 0;
+                const monthlyQuota = parseFloat(item.monthlyQuota) || (weeklyQuota * 4);
+                const actualQuota = parseFloat(item.actualQuota) || monthlyQuota;
+                const absenceDays = parseInt(item.absenceDays) || 0;
+                const attendanceDays = item.attendanceDays !== undefined ? item.attendanceDays : Math.max(0, 22 - absenceDays);
+                
+                const eligible = isEligibleForBonus(item);
+                const statusBadge = eligible ? 
+                    '<span class="badge badge-eligible">✓ يستحق</span>' : 
+                    '<span class="badge badge-ineligible">✕ لا يستحق</span>';
+
+                const row = '<tr>' +
+                    '<td>' + (index + 1) + '</td>' +
+                    '<td><strong>' + item.name + '</strong></td>' +
+                    '<td>' + item.nationalId + '</td>' +
+                    '<td>' + weeklyQuota + '</td>' +
+                    '<td>' + monthlyQuota + '</td>' +
+                    '<td>' + actualQuota + '</td>' +
+                    '<td>' + absenceDays + '</td>' +
+                    '<td>' + attendanceDays + '</td>' +
+                    '<td>' + statusBadge + '</td>' +
+                '</tr>';
+                bonusBody.innerHTML += row;
+            });
+        }
+
+        function filterBonusData() {
+            const query = document.getElementById('searchBonusInput').value.trim().toLowerCase();
+            const stageFiltered = getFilteredByStageData();
+            const filtered = stageFiltered.filter(item => 
+                item.name.toLowerCase().includes(query) || 
+                item.nationalId.includes(query)
+            );
+            renderBonusTable(filtered);
+        }
+
         function filterData() {
             const query = document.getElementById('searchInput').value.trim().toLowerCase();
             const selectedSubject = document.getElementById('subjectFilter').value;
@@ -457,7 +556,7 @@
                 const matchesQuery = item.name.toLowerCase().includes(query) || 
                                      item.code.includes(query) || 
                                      item.nationalId.includes(query) || 
-                                     item.jobTitle.toLowerCase().includes(query) || 
+                                     (item.jobTitle && item.jobTitle.toLowerCase().includes(query)) || 
                                      (item.subject && item.subject.toLowerCase().includes(query));
 
                 const matchesSubject = selectedSubject === "" || item.subject === selectedSubject;
@@ -492,6 +591,9 @@
             document.getElementById('editSubject').value = "";
             document.getElementById('editWeeklyQuota').value = 0;
             document.getElementById('editMonthlyQuota').value = 0;
+            document.getElementById('editActualQuota').value = 0;
+            document.getElementById('editAbsenceDays').value = 0;
+            document.getElementById('editAttendanceDays').value = 22;
             document.getElementById('editQualification').value = "";
             document.getElementById('dataModal').style.display = 'flex';
         }
@@ -502,6 +604,10 @@
             if (!item) return;
 
             const parsedInfo = parseNationalId(item.nationalId);
+            const weekly = item.weeklyQuota || 0;
+            const monthly = item.monthlyQuota || (weekly * 4);
+            const absence = item.absenceDays !== undefined ? item.absenceDays : 0;
+
             document.getElementById('modalTitle').textContent = "تعديل بيانات الموظف";
             document.getElementById('editId').value = item.id;
             document.getElementById('editName').value = item.name;
@@ -518,8 +624,11 @@
             document.getElementById('editJobDate').value = item.jobDate || "";
             document.getElementById('editPhone').value = item.phone || "";
             document.getElementById('editSubject').value = item.subject;
-            document.getElementById('editWeeklyQuota').value = item.weeklyQuota || 0;
-            document.getElementById('editMonthlyQuota').value = item.monthlyQuota || 0;
+            document.getElementById('editWeeklyQuota').value = weekly;
+            document.getElementById('editMonthlyQuota').value = monthly;
+            document.getElementById('editActualQuota').value = item.actualQuota !== undefined ? item.actualQuota : monthly;
+            document.getElementById('editAbsenceDays').value = absence;
+            document.getElementById('editAttendanceDays').value = item.attendanceDays !== undefined ? item.attendanceDays : Math.max(0, 22 - absence);
             document.getElementById('editQualification').value = item.qualification;
             document.getElementById('dataModal').style.display = 'flex';
         }
@@ -556,6 +665,9 @@
                 subject: document.getElementById('editSubject').value,
                 weeklyQuota: parseFloat(document.getElementById('editWeeklyQuota').value) || 0,
                 monthlyQuota: parseFloat(document.getElementById('editMonthlyQuota').value) || 0,
+                actualQuota: parseFloat(document.getElementById('editActualQuota').value) || 0,
+                absenceDays: parseInt(document.getElementById('editAbsenceDays').value) || 0,
+                attendanceDays: parseInt(document.getElementById('editAttendanceDays').value) || 0,
                 qualification: document.getElementById('editQualification').value
             };
 
@@ -574,6 +686,7 @@
             await saveDataToCloud();
             initSubjectFilter();
             filterData();
+            renderBonusTable();
         }
 
         async function deleteRecord(id) {
@@ -583,6 +696,7 @@
                 await saveDataToCloud();
                 initSubjectFilter();
                 filterData();
+                renderBonusTable();
             }
         }
 
@@ -614,6 +728,35 @@
             const workbook = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(workbook, worksheet, "ميزانية العاملين");
             XLSX.writeFile(workbook, "سجل_ميزانية_العاملين_" + currentStageFilter + ".xlsx");
+        }
+
+        function exportBonusToExcel() {
+            const currentStageList = getFilteredByStageData();
+            const bonusExportData = currentStageList.map((item, index) => {
+                const weeklyQuota = parseFloat(item.weeklyQuota) || 0;
+                const monthlyQuota = parseFloat(item.monthlyQuota) || (weeklyQuota * 4);
+                const actualQuota = parseFloat(item.actualQuota) || monthlyQuota;
+                const absenceDays = parseInt(item.absenceDays) || 0;
+                const attendanceDays = item.attendanceDays !== undefined ? item.attendanceDays : Math.max(0, 22 - absenceDays);
+                const eligible = isEligibleForBonus(item) ? "يستحق" : "لا يستحق";
+
+                return {
+                    "م": index + 1,
+                    "الاسم": item.name,
+                    "الرقم القومي": item.nationalId,
+                    "النصاب الأسبوعي": weeklyQuota,
+                    "النصاب الشهري": monthlyQuota,
+                    "النصاب الفعلي": actualQuota,
+                    "عدد أيام الغياب": absenceDays,
+                    "عدد أيام الحضور": attendanceDays,
+                    "يستحق - لا يستحق": eligible
+                };
+            });
+
+            const worksheet = XLSX.utils.json_to_sheet(bonusExportData);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "حافز المعلمين");
+            XLSX.writeFile(workbook, "سجل_حافز_المعلمين_" + currentStageFilter + ".xlsx");
         }
 
         function printEmployeeStatement(id) {
@@ -656,7 +799,7 @@
                 }
                 subjectMap[subject].count++;
                 subjectMap[subject].weeklyQuota += parseInt(item.weeklyQuota) || 0;
-                subjectMap[subject].monthlyQuota += parseInt(item.monthlyQuota) || 0;
+                subjectMap[subject].monthlyQuota += parseInt(item.monthlyQuota) || (parseInt(item.weeklyQuota || 0) * 4);
             });
 
             const subjectKeys = Object.keys(subjectMap);
@@ -693,6 +836,7 @@
             document.getElementById(sectionName).style.display = 'block';
             if (sectionName === 'dashboard') updateStats();
             else if (sectionName === 'employees') filterData();
+            else if (sectionName === 'teacherBonus') renderBonusTable();
             else if (sectionName === 'subjectStats') updateSubjectStats();
         }
 
