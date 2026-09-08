@@ -16,7 +16,7 @@
             --text-color: #1e293b; 
         }
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: var(--bg-color); color: var(--text-color); margin: 0; padding: 20px; direction: rtl; }
-        .container { max-width: 1650px; margin: 0 auto; background: #ffffff; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); position: relative; padding-bottom: 60px; }
+        .container { max-width: 1750px; margin: 0 auto; background: #ffffff; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); position: relative; padding-bottom: 60px; }
         h1 { color: var(--primary-color); text-align: center; margin-bottom: 5px; }
         p.subtitle { text-align: center; color: #64748b; margin-top: 0; margin-bottom: 20px; }
         
@@ -129,6 +129,7 @@
                             <th>المجموعة الوظيفية</th>
                             <th>الحالة</th>
                             <th>الوظيفة الحالية</th>
+                            <th>تاريخ الوظيفة الحالية</th>
                             <th>كود المعلم</th>
                             <th>الرقم القومي</th>
                             <th>المادة / التخصص</th>
@@ -423,6 +424,7 @@
                     '<td>' + (item.jobGroup || 'التعليم والتدريس') + '</td>' +
                     '<td>' + getStatusBadge(item.status || 'أصلي') + '</td>' +
                     '<td>' + item.jobTitle + '</td>' +
+                    '<td>' + (item.jobDate || '-') + '</td>' +
                     '<td>' + item.code + '</td>' +
                     '<td>' + item.nationalId + '</td>' +
                     '<td>' + (item.subject || '-') + '</td>' +
@@ -599,6 +601,7 @@
                     "المجموعة الوظيفية": item.jobGroup || 'التعليم والتدريس',
                     "الحالة": item.status || 'أصلي',
                     "الوظيفة الحالية": item.jobTitle,
+                    "تاريخ الوظيفة الحالية": item.jobDate || '-',
                     "كود المعلم": item.code,
                     "الرقم القومي": item.nationalId,
                     "المادة / التخصص": item.subject || '-',
@@ -630,6 +633,7 @@
                 '<div class="info-item"><label>تاريخ الميلاد:</label> ' + (item.birthDate || parsedInfo.birthDate || '-') + '</div>' +
                 '<div class="info-item"><label>تاريخ التعيين:</label> ' + (item.hireDate || '-') + '</div>' +
                 '<div class="info-item"><label>الوظيفة الحالية:</label> ' + item.jobTitle + '</div>' +
+                '<div class="info-item"><label>تاريخ الوظيفة الحالية:</label> ' + (item.jobDate || '-') + '</div>' +
                 '<div class="info-item"><label>الكود:</label> ' + item.code + '</div>' +
                 '<div class="info-item"><label>الرقم القومي:</label> ' + item.nationalId + '</div>' +
                 '<div class="info-item"><label>المادة / التخصص:</label> ' + (item.subject || '-') + '</div>' +
