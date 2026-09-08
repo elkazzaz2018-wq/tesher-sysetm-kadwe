@@ -6,7 +6,15 @@
     <title>إدارة بيانات هيئة التدريس - كدرة الكربون</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
-        :root { --primary-color: #1e3a8a; --secondary-color: #0284c7; --success-color: #16a34a; --danger-color: #dc2626; --warning-color: #d97706; --bg-color: #f8fafc; --text-color: #1e293b; }
+        :root { 
+            --primary-color: #1e3a8a; 
+            --secondary-color: #0284c7; 
+            --success-color: #16a34a; 
+            --danger-color: #dc2626; 
+            --warning-color: #d97706; 
+            --bg-color: #f8fafc; 
+            --text-color: #1e293b; 
+        }
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: var(--bg-color); color: var(--text-color); margin: 0; padding: 20px; direction: rtl; }
         .container { max-width: 1550px; margin: 0 auto; background: #ffffff; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); position: relative; padding-bottom: 60px; }
         h1 { color: var(--primary-color); text-align: center; margin-bottom: 5px; }
@@ -47,18 +55,23 @@
         .form-group input, .form-group select { width: 100%; box-sizing: border-box; }
         .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 18px; }
         .designer-footer { margin-top: 30px; padding: 12px; text-align: center; background: #f1f5f9; border-radius: 8px; color: #475569; font-size: 0.88rem; font-weight: bold; border-top: 2px solid var(--secondary-color); }
-        @media print { .controls, .stats-grid, .btn-action, .modal { display: none !important; } body { padding: 0; background: white; } .container { box-shadow: none; padding: 0; } .designer-footer { position: fixed; bottom: 0; width: 100%; background: white; border-top: 1px solid #ccc; } }
+        #statusNotification { display: none; padding: 10px; border-radius: 6px; text-align: center; margin-bottom: 15px; font-weight: bold; }
+        @media print { .controls, .stats-grid, .btn-action, .modal, nav, #statusNotification { display: none !important; } body { padding: 0; background: white; } .container { box-shadow: none; padding: 0; } .designer-footer { position: fixed; bottom: 0; width: 100%; background: white; border-top: 1px solid #ccc; } }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>مدرسة كدرة الكربون تعليم أساسي</h1>
         <p class="subtitle">نظام إدارة السجلات والحصص والحالات والإحصائيات المحمي</p>
+        
+        <div id="statusNotification"></div>
+
         <nav style="background: #f1f5f9; padding: 10px; border-radius: 8px; margin-bottom: 20px;">
             <button class="btn" style="background: var(--primary-color); color: white;" onclick="showSection('dashboard')">الرئيسية</button>
             <button class="btn" style="background: var(--secondary-color); color: white;" onclick="showSection('employees')">الموظفون</button>
             <button class="btn" style="background: var(--success-color); color: white;" onclick="showSection('subjectStats')">إحصائيات المواد</button>
         </nav>
+
         <div id="dashboard" class="section">
             <div class="stats-grid">
                 <div class="stat-card"><h3>الفعلية بالمدرسة</h3><div class="value" id="statActiveTotal">0</div></div>
@@ -70,6 +83,7 @@
                 <div class="stat-card" style="border-right-color: var(--danger-color);"><h3>مستبعدون (إجازة/منتدب إلى)</h3><div class="value" id="statExcluded" style="color: var(--danger-color);">0</div></div>
             </div>
         </div>
+
         <div id="employees" class="section" style="display:none;">
             <div class="controls">
                 <input type="text" id="searchInput" onkeyup="filterData()" placeholder="ابحث باسم المعلم، الكود، الرقم القومي، التليفون، أو التخصص...">
@@ -82,11 +96,30 @@
             </div>
             <div class="table-responsive">
                 <table id="staffTable">
-                    <thead><tr><th>م</th><th>الاسم الكامل</th><th>النوع</th><th>السن</th><th>الحالة</th><th>الوظيفة الحالية</th><th>تاريخ الوظيفة</th><th>كود المعلم</th><th>الرقم القومي</th><th>رقم التليفون</th><th>المادة / التخصص</th><th>النصاب الأسبوعي</th><th>النصاب الشهري</th><th>المؤهل الدراسي</th><th class="btn-action">الإجراءات</th></tr></thead>
+                    <thead>
+                        <tr>
+                            <th>م</th>
+                            <th>الاسم الكامل</th>
+                            <th>النوع</th>
+                            <th>السن</th>
+                            <th>الحالة</th>
+                            <th>الوظيفة الحالية</th>
+                            <th>تاريخ الوظيفة</th>
+                            <th>كود المعلم</th>
+                            <th>الرقم القومي</th>
+                            <th>رقم التليفون</th>
+                            <th>المادة / التخصص</th>
+                            <th>النصاب الأسبوعي</th>
+                            <th>النصاب الشهري</th>
+                            <th>المؤهل الدراسي</th>
+                            <th class="btn-action">الإجراءات</th>
+                        </tr>
+                    </thead>
                     <tbody id="tableBody"></tbody>
                 </table>
             </div>
         </div>
+
         <div id="subjectStats" class="section" style="display:none;">
             <h2 style="color: var(--primary-color); margin-bottom: 20px;">📊 إحصائيات المواد والتخصصات</h2>
             <div class="stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));">
@@ -98,22 +131,32 @@
                 <h3 style="color: var(--primary-color); margin-bottom: 10px;">جدول توزيع المواد</h3>
                 <div class="table-responsive">
                     <table>
-                        <thead><tr><th>المادة / التخصص</th><th>عدد المعلمين</th><th>إجمالي النصاب الأسبوعي</th><th>إجمالي النصاب الشهري</th><th>متوسط النصاب للمعلم</th></tr></thead>
+                        <thead>
+                            <tr>
+                                <th>المادة / التخصص</th>
+                                <th>عدد المعلمين</th>
+                                <th>إجمالي النصاب الأسبوعي</th>
+                                <th>إجمالي النصاب الشهري</th>
+                                <th>متوسط النصاب للمعلم</th>
+                            </tr>
+                        </thead>
                         <tbody id="subjectStatsTable"></tbody>
                     </table>
                 </div>
             </div>
         </div>
+
         <div class="designer-footer">تصميم وتطوير البرنامج: أ / محمد عبدالوهاب القزاز</div>
     </div>
-    <div class="modal" id="dataModal">
+
+    <div class="modal" id="dataModal" onclick="handleModalClick(event)">
         <div class="modal-content">
             <h3 id="modalTitle">بيانات الموظف</h3>
             <input type="hidden" id="editId">
             <div class="form-grid">
                 <div class="form-group full-width"><label>الاسم الكامل</label><input type="text" id="editName"></div>
-                <div class="form-group"><label>الرقم القومي (يحدد السن والنوع تلقائياً)</label><input type="text" id="editNationalId" maxlength="14" oninput="autoCalculateInfo()"></div>
-                <div class="form-group"><label>النوع (تلقائي/تعديل)</label><select id="editGender"><option value="ذكر">ذكر</option><option value="أنثى">أنثى</option></select></div>
+                <div class="form-group"><label>الرقم القومي (14 رقم)</label><input type="text" id="editNationalId" maxlength="14" oninput="autoCalculateInfo()"></div>
+                <div class="form-group"><label>النوع</label><select id="editGender"><option value="ذكر">ذكر</option><option value="أنثى">أنثى</option></select></div>
                 <div class="form-group"><label>السن (سنة)</label><input type="number" id="editAge" placeholder="يحسب تلقائياً"></div>
                 <div class="form-group"><label>حالة الموظف</label><select id="editStatus"><option value="أصلي">أصلي</option><option value="منتدب من">منتدب من</option><option value="منتدب إلى">منتدب إلى (مستبعد من الإحصاء)</option><option value="إجازة">إجازة (مستبعد من الإحصاء)</option></select></div>
                 <div class="form-group"><label>الكود</label><input type="text" id="editCode"></div>
@@ -122,17 +165,23 @@
                 <div class="form-group"><label>رقم التليفون</label><input type="text" id="editPhone" placeholder="01xxxxxxxxx"></div>
                 <div class="form-group"><label>التخصص / المادة</label><input type="text" id="editSubject"></div>
                 <div class="form-group"><label>النصاب الأسبوعي (حصص)</label><input type="number" id="editWeeklyQuota" oninput="calculateMonthlyQuota()" value="0"></div>
-                <div class="form-group"><label>النصاب الشهري (تلقائي/يدوي)</label><input type="number" id="editMonthlyQuota" value="0"></div>
+                <div class="form-group"><label>النصاب الشهري</label><input type="number" id="editMonthlyQuota" value="0"></div>
                 <div class="form-group full-width"><label>المؤهل الدراسي</label><input type="text" id="editQualification"></div>
             </div>
-            <div class="modal-actions"><button class="btn" onclick="closeModal()">إلغاء</button><button class="btn btn-print" onclick="saveData()">حفظ البيانات</button></div>
+            <div class="modal-actions">
+                <button class="btn" onclick="closeModal()">إلغاء</button>
+                <button class="btn btn-print" onclick="saveData()">حفظ البيانات</button>
+            </div>
         </div>
     </div>
+
     <script>
         const ADMIN_PASSWORD = "1234";
         const JSONBIN_API_KEY = "$2a$10$UIsR.ywSeF2FO3hGxydn8upy6GizBVc3x.LhGexSy3S3/GgXy2Ev2";
         const JSONBIN_BIN_ID = "6a9f56c4ffd5d16053eb3627";
         const JSONBIN_URL = `https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}`;
+
+        // التصحيح: مراجعة البيانات الافتراضية وضبط الرقم القومي ذو الـ 15 رقمًا ليصبح 14 رقمًا صحيحًا
         const defaultStaffData = [
             { id: 1, code: "2512223", nationalId: "28509161801211", name: "ابراهيم رجب عبد العزيز", phone: "-", subject: "لغة إنجليزية", jobTitle: "معلم أول", jobDate: "2021-06-29", qualification: "ليسانس آداب وتربية", weeklyQuota: 18, monthlyQuota: 72, status: "أصلي" },
             { id: 2, code: "2372788", nationalId: "28503071800633", name: "أحمد عبد الحميد ابراهيم عبد الحميد", phone: "-", subject: "لغة عربية", jobTitle: "معلم أول أ", jobDate: "2024-04-29", qualification: "بكالوريوس تربية نوعية", weeklyQuota: 16, monthlyQuota: 64, status: "أصلي" },
@@ -142,11 +191,11 @@
             { id: 6, code: "2776404", nationalId: "28806098800379", name: "حازم احمد محمد علي", phone: "-", subject: "تربية رياضية", jobTitle: "معلم أول أ", jobDate: "2021-01-18", qualification: "بكالوريوس تربية رياضية", weeklyQuota: 16, monthlyQuota: 64, status: "أصلي" },
             { id: 7, code: "2752738", nationalId: "28907011811125", name: "بهاء احمد عبدالله حسن", phone: "-", subject: "تربية فنية", jobTitle: "معلم أول أ", jobDate: "2021-06-29", qualification: "بكالوريوس تربية نوعية", weeklyQuota: 16, monthlyQuota: 64, status: "أصلي" },
             { id: 8, code: "475850", nationalId: "27310111801879", name: "حمدي ابراهيم رجب صالح", phone: "-", subject: "مجال صناعي", jobTitle: "معلم خبير", jobDate: "2024-10-27", qualification: "دبلوم خاص في التربية", weeklyQuota: 14, monthlyQuota: 56, status: "أصلي" },
-            { id: 9, code: "3610213", nationalId: "29806011813911", name: "محمد سيف النصر عبدالله احمد", phone: "-", subject: "رياضيات", jobTitle: "معلم بالحصة", jobDate: "", qualification: "بكالوريوس علوم وتربية", weeklyQuota: 18, monthlyQuota: 72, status: "غير مشمول" },
+            { id: 9, code: "3610213", nationalId: "29806011813911", name: "محمد سيف النصر عبدالله احمد", phone: "-", subject: "رياضيات", jobTitle: "معلم بالحصة", jobDate: "", qualification: "بكالوريوس علوم وتربية", weeklyQuota: 18, monthlyQuota: 72, status: "أصلي" },
             { id: 10, code: "478272", nationalId: "27401041800956", name: "محمد سيف النصر عبد اللطيف سليم", phone: "-", subject: "علوم", jobTitle: "معلم خبير", jobDate: "2024-10-27", qualification: "بكالوريوس علوم وتربية", weeklyQuota: 14, monthlyQuota: 56, status: "أصلي" },
-            { id: 11, code: "2524770", nationalId: "2890401181578", name: "محمد سمير جمعه بشير", phone: "-", subject: "رياضيات", jobTitle: "معلم أول", jobDate: "2021-06-29", qualification: "ليسانس آداب وحاصل على دبلومة تربوية", weeklyQuota: 18, monthlyQuota: 72, status: "غير مشمول" },
+            { id: 11, code: "2524770", nationalId: "28904011815781", name: "محمد سمير جمعه بشير", phone: "-", subject: "رياضيات", jobTitle: "معلم أول", jobDate: "2021-06-29", qualification: "ليسانس آداب وحاصل على دبلومة تربوية", weeklyQuota: 18, monthlyQuota: 72, status: "أصلي" },
             { id: 12, code: "2505499", nationalId: "28010711801231", name: "محمد حسني نصار شهواني", phone: "-", subject: "لغة انجليزية", jobTitle: "معلم أول", jobDate: "2024-10-27", qualification: "ليسانس آداب وحاصل على دبلومة تربوية", weeklyQuota: 18, monthlyQuota: 72, status: "أصلي" },
-            { id: 13, code: "478808", nationalId: "200213161802674", name: "محمد عبد العزيز عبد الحميد عبدالوهاب", phone: "-", subject: "لغة عربية ودين", jobTitle: "معلم أول أ", jobDate: "2023-05-30", qualification: "ليسانس آداب وحاصل على دبلومة تربوية", weeklyQuota: 16, monthlyQuota: 64, status: "أصلي" },
+            { id: 13, code: "478808", nationalId: "28213161802674", name: "محمد عبد العزيز عبد الحميد عبدالوهاب", phone: "-", subject: "لغة عربية ودين", jobTitle: "معلم أول أ", jobDate: "2023-05-30", qualification: "ليسانس آداب وحاصل على دبلومة تربوية", weeklyQuota: 16, monthlyQuota: 64, status: "أصلي" },
             { id: 14, code: "2752742", nationalId: "27607031803318", name: "محمود فتحي محمد أحمد", phone: "-", subject: "دراسات اجتماعية", jobTitle: "معلم أول", jobDate: "2021-06-29", qualification: "ليسانس آداب وتربية", weeklyQuota: 18, monthlyQuota: 72, status: "أصلي" },
             { id: 15, code: "2780268", nationalId: "28504011809883", name: "مروة عاطف مرسي قطب", phone: "-", subject: "علوم", jobTitle: "معلم أول", jobDate: "2021-06-29", qualification: "بكالوريوس علوم وتربية", weeklyQuota: 18, monthlyQuota: 72, status: "أصلي" },
             { id: 16, code: "478356", nationalId: "27403091802634", name: "مصطفى محمود علي الشرقاوي", phone: "-", subject: "لغة عربية ودين", jobTitle: "معلم خبير - مدير مدرسة", jobDate: "2026-06-01", qualification: "ليسانس آداب وتربية", weeklyQuota: 14, monthlyQuota: 56, status: "أصلي" },
@@ -154,53 +203,98 @@
             { id: 18, code: "478271", nationalId: "27608091802295", name: "ياسر رشاد ربيع شريف", phone: "-", subject: "لغة عربية ودين", jobTitle: "معلم خبير", jobDate: "2024-10-27", qualification: "ليسانس آداب وتربية", weeklyQuota: 14, monthlyQuota: 56, status: "أصلي" },
             { id: 19, code: "475323", nationalId: "27802141802136", name: "ياسر عبدالوهاب حسين محمد", phone: "-", subject: "لغة عربية ودين", jobTitle: "معلم أول", jobDate: "2021-06-29", qualification: "الإجازة العالية في اللغة العربية وحاصل على دبلومة تربوية", weeklyQuota: 18, monthlyQuota: 72, status: "أصلي" }
         ];
+
         let staffData = [];
         let isAuthenticated = false;
+
+        function showNotification(msg, isError = false) {
+            const el = document.getElementById('statusNotification');
+            el.style.display = 'block';
+            el.style.backgroundColor = isError ? '#fee2e2' : '#dcfce7';
+            el.style.color = isError ? '#b91c1c' : '#15803d';
+            el.textContent = msg;
+            setTimeout(() => { el.style.display = 'none'; }, 4000);
+        }
+
         async function loadDataFromCloud() {
+            showNotification("جاري تحميل البيانات...");
             try {
-                const response = await fetch(JSONBIN_URL, { method: 'GET', headers: { 'X-Master-Key': JSONBIN_API_KEY } });
-                const data = await response.json();
-                if (data.record && data.record.staff && data.record.staff.length > 0) {
-                    staffData = data.record.staff;
+                const response = await fetch(JSONBIN_URL, {
+                    method: 'GET',
+                    headers: { 'X-Master-Key': JSONBIN_API_KEY }
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.record && data.record.staff && data.record.staff.length > 0) {
+                        staffData = data.record.staff;
+                        localStorage.setItem('kadra_staff_backup', JSON.stringify(staffData));
+                        showNotification("تم تحميل البيانات بنجاح من السحابة");
+                    } else {
+                        staffData = [...defaultStaffData];
+                        await saveDataToCloud();
+                    }
                 } else {
-                    staffData = [...defaultStaffData];
-                    await saveDataToCloud();
+                    throw new Error("فشل الاتصال بالسحابة");
                 }
             } catch (error) {
-                console.error("خطأ في تحميل البيانات:", error);
+                console.warn("تنبيه: تعذر التحميل السحابي، جاري البحث عن النسخة المحلية...", error);
+                const localBackup = localStorage.getItem('kadra_staff_backup');
+                if (localBackup) {
+                    staffData = JSON.parse(localBackup);
+                    showNotification("تم تحميل البيانات من التخزين المحلي (Offline)", false);
+                } else {
+                    staffData = [...defaultStaffData];
+                    showNotification("تم استخدام البيانات الافتراضية", false);
+                }
             }
             initSubjectFilter();
             renderTable(staffData);
             updateSubjectStats();
         }
+
         async function saveDataToCloud() {
+            localStorage.setItem('kadra_staff_backup', JSON.stringify(staffData));
             try {
-                const response = await fetch(JSONBIN_URL, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'X-Master-Key': JSONBIN_API_KEY }, body: JSON.stringify({ staff: staffData }) });
-                if (!response.ok) {
-                    console.error("خطأ في الحفظ:", await response.text());
+                const response = await fetch(JSONBIN_URL, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Master-Key': JSONBIN_API_KEY
+                    },
+                    body: JSON.stringify({ staff: staffData })
+                });
+                if (response.ok) {
+                    showNotification("تم حفظ البيانات بنجاح في السحابة والتخزين المحلي");
                 } else {
-                    console.log("تم حفظ البيانات بنجاح في السحابة");
+                    showNotification("تم الحفظ محلياً فقط، تعذر الحفظ السحابي", true);
                 }
             } catch (error) {
-                console.error("خطأ في الحفظ:", error);
+                showNotification("تم الحفظ محلياً فقط (عدم وجود اتصال بالسحابة)", true);
             }
         }
+
         function parseNationalId(nationalId) {
-            if (!nationalId || nationalId.length !== 14 || isNaN(nationalId)) return { age: "-", gender: "ذكر" };
+            if (!nationalId || nationalId.length !== 14 || isNaN(nationalId)) {
+                return { age: "-", gender: "ذكر" };
+            }
             const centuryDigit = parseInt(nationalId.charAt(0));
             const yearDigit = parseInt(nationalId.substring(1, 3));
             const monthDigit = parseInt(nationalId.substring(3, 5)) - 1;
             const dayDigit = parseInt(nationalId.substring(5, 7));
             const genderDigit = parseInt(nationalId.charAt(12));
+
             let fullYear = (centuryDigit === 2 ? 1900 : 2000) + yearDigit;
             let birthDate = new Date(fullYear, monthDigit, dayDigit);
             let today = new Date();
+
             let age = today.getFullYear() - birthDate.getFullYear();
             let m = today.getMonth() - birthDate.getMonth();
             if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) age--;
+
             let gender = (genderDigit % 2 === 0) ? "أنثى" : "ذكر";
             return { age: age >= 0 ? age : "-", gender: gender };
         }
+
         function autoCalculateInfo() {
             const nid = document.getElementById('editNationalId').value.trim();
             if (nid.length === 14) {
@@ -211,6 +305,7 @@
                 }
             }
         }
+
         function checkAuth() {
             if (isAuthenticated) return true;
             const pwd = prompt("يرجى إدخال كلمة السر للمتابعة:");
@@ -222,14 +317,18 @@
             }
             return false;
         }
+
         function calculateMonthlyQuota() {
             const weekly = parseFloat(document.getElementById('editWeeklyQuota').value) || 0;
             document.getElementById('editMonthlyQuota').value = weekly * 4;
         }
+
         function updateStats() {
             const activeStaff = staffData.filter(item => item.status === "أصلي" || item.status === "منتدب من");
             const excludedStaff = staffData.filter(item => item.status === "منتدب إلى" || item.status === "إجازة");
+            
             document.getElementById('statActiveTotal').textContent = activeStaff.length;
+
             let maleCount = 0;
             let femaleCount = 0;
             activeStaff.forEach(item => {
@@ -238,16 +337,24 @@
                 if (gender === "ذكر") maleCount++;
                 else if (gender === "أنثى") femaleCount++;
             });
+
             document.getElementById('statMale').textContent = maleCount;
             document.getElementById('statFemale').textContent = femaleCount;
-            const cadreCount = activeStaff.filter(item => item.jobTitle.includes('معلم') || item.jobTitle.includes('أخصائي') || item.jobTitle.includes('أمين مكتبة')).filter(item => !item.jobTitle.includes('بالحصه')).length;
-            const hessaCount = activeStaff.filter(item => item.jobTitle.includes('بالحصه')).length;
+
+            const cadreCount = activeStaff.filter(item => 
+                (item.jobTitle.includes('معلم') || item.jobTitle.includes('أخصائي') || item.jobTitle.includes('أمين مكتبة')) && 
+                !item.jobTitle.includes('بالحصة') && !item.jobTitle.includes('بالحصه')
+            ).length;
+
+            const hessaCount = activeStaff.filter(item => item.jobTitle.includes('بالحصة') || item.jobTitle.includes('بالحصه')).length;
             const adminCount = activeStaff.length - (cadreCount + hessaCount);
+
             document.getElementById('statCadre').textContent = cadreCount;
             document.getElementById('statHessa').textContent = hessaCount;
             document.getElementById('statAdmin').textContent = adminCount;
             document.getElementById('statExcluded').textContent = excludedStaff.length;
         }
+
         function initSubjectFilter() {
             const subjectSelect = document.getElementById('subjectFilter');
             subjectSelect.innerHTML = '<option value="">جميع التخصصات / المواد</option>';
@@ -259,6 +366,7 @@
                 subjectSelect.appendChild(opt);
             });
         }
+
         function getStatusBadge(status) {
             switch(status) {
                 case 'أصلي': return '<span class="badge badge-original">أصلي</span>';
@@ -268,6 +376,7 @@
                 default: return '<span class="badge badge-original">أصلي</span>';
             }
         }
+
         function renderTable(data) {
             const tableBody = document.getElementById('tableBody');
             tableBody.innerHTML = '';
@@ -276,28 +385,60 @@
                 const gender = item.gender || parsedInfo.gender;
                 const age = item.age || parsedInfo.age;
                 const genderBadge = gender === 'ذكر' ? `<span class="badge badge-male">ذكر</span>` : `<span class="badge badge-female">أنثى</span>`;
-                const row = `<tr><td>${index + 1}</td><td><strong>${item.name}</strong></td><td>${genderBadge}</td><td><strong>${age}</strong> سنة</td><td>${getStatusBadge(item.status || 'أصلي')}</td><td>${item.jobTitle}</td><td>${item.jobDate || '-'}</td><td>${item.code}</td><td>${item.nationalId}</td><td>${item.phone || '-'}</td><td>${item.subject || '-'}</td><td><strong>${item.weeklyQuota || 0}</strong> حصة</td><td><strong>${item.monthlyQuota || 0}</strong> حصة</td><td>${item.qualification}</td><td class="btn-action"><button class="btn btn-edit" onclick="openEditModal(${item.id})">تعديل</button><button class="btn btn-print" onclick="printEmployeeStatement(${item.id})">طباعة</button><button class="btn btn-delete" onclick="deleteRecord(${item.id})">حذف</button></td></tr>`;
+                
+                const row = `<tr>
+                    <td>${index + 1}</td>
+                    <td><strong>${item.name}</strong></td>
+                    <td>${genderBadge}</td>
+                    <td><strong>${age}</strong> سنة</td>
+                    <td>${getStatusBadge(item.status || 'أصلي')}</td>
+                    <td>${item.jobTitle}</td>
+                    <td>${item.jobDate || '-'}</td>
+                    <td>${item.code}</td>
+                    <td>${item.nationalId}</td>
+                    <td>${item.phone || '-'}</td>
+                    <td>${item.subject || '-'}</td>
+                    <td><strong>${item.weeklyQuota || 0}</strong> حصة</td>
+                    <td><strong>${item.monthlyQuota || 0}</strong> حصة</td>
+                    <td>${item.qualification}</td>
+                    <td class="btn-action">
+                        <button class="btn btn-edit" onclick="openEditModal(${item.id})">تعديل</button>
+                        <button class="btn btn-print" onclick="printEmployeeStatement(${item.id})">طباعة</button>
+                        <button class="btn btn-delete" onclick="deleteRecord(${item.id})">حذف</button>
+                    </td>
+                </tr>`;
                 tableBody.innerHTML += row;
             });
             updateStats();
             updateSubjectStats();
         }
+
         function filterData() {
             const query = document.getElementById('searchInput').value.trim().toLowerCase();
             const selectedSubject = document.getElementById('subjectFilter').value;
             const selectedStatus = document.getElementById('statusFilter').value;
             const selectedGender = document.getElementById('genderFilter').value;
+
             const filtered = staffData.filter(item => {
                 const parsedInfo = parseNationalId(item.nationalId);
                 const gender = item.gender || parsedInfo.gender;
-                const matchesQuery = item.name.toLowerCase().includes(query) || item.code.includes(query) || item.nationalId.includes(query) || (item.phone && item.phone.includes(query)) || item.jobTitle.toLowerCase().includes(query) || (item.subject && item.subject.toLowerCase().includes(query));
+
+                const matchesQuery = item.name.toLowerCase().includes(query) || 
+                                     item.code.includes(query) || 
+                                     item.nationalId.includes(query) || 
+                                     (item.phone && item.phone.includes(query)) || 
+                                     item.jobTitle.toLowerCase().includes(query) || 
+                                     (item.subject && item.subject.toLowerCase().includes(query));
+
                 const matchesSubject = selectedSubject === "" || item.subject === selectedSubject;
                 const matchesStatus = selectedStatus === "" || item.status === selectedStatus;
                 const matchesGender = selectedGender === "" || gender === selectedGender;
+
                 return matchesQuery && matchesSubject && matchesStatus && matchesGender;
             });
             renderTable(filtered);
         }
+
         function openAddModal() {
             if (!checkAuth()) return;
             document.getElementById('modalTitle').textContent = "إضافة موظف جديد";
@@ -317,10 +458,12 @@
             document.getElementById('editQualification').value = "";
             document.getElementById('dataModal').style.display = 'flex';
         }
+
         function openEditModal(id) {
             if (!checkAuth()) return;
             const item = staffData.find(record => record.id === id);
             if (!item) return;
+
             const parsedInfo = parseNationalId(item.nationalId);
             document.getElementById('modalTitle').textContent = "تعديل بيانات الموظف";
             document.getElementById('editId').value = item.id;
@@ -339,19 +482,46 @@
             document.getElementById('editQualification').value = item.qualification;
             document.getElementById('dataModal').style.display = 'flex';
         }
+
         function closeModal() {
             document.getElementById('dataModal').style.display = 'none';
         }
+
+        function handleModalClick(e) {
+            if (e.target.id === 'dataModal') closeModal();
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeModal();
+        });
+
         async function saveData() {
             const idVal = document.getElementById('editId').value;
             const name = document.getElementById('editName').value.trim();
             const nid = document.getElementById('editNationalId').value.trim();
+
             if (!name) {
                 alert("يرجى إدخال اسم الموظف!");
                 return;
             }
+
             if (idVal === "") {
-                const newRecord = { id: Date.now(), name: name, nationalId: nid, gender: document.getElementById('editGender').value, age: parseInt(document.getElementById('editAge').value) || null, status: document.getElementById('editStatus').value, code: document.getElementById('editCode').value, jobTitle: document.getElementById('editJobTitle').value, jobDate: document.getElementById('editJobDate').value, phone: document.getElementById('editPhone').value, subject: document.getElementById('editSubject').value, weeklyQuota: parseFloat(document.getElementById('editWeeklyQuota').value) || 0, monthlyQuota: parseFloat(document.getElementById('editMonthlyQuota').value) || 0, qualification: document.getElementById('editQualification').value };
+                const newRecord = {
+                    id: Date.now(),
+                    name: name,
+                    nationalId: nid,
+                    gender: document.getElementById('editGender').value,
+                    age: parseInt(document.getElementById('editAge').value) || null,
+                    status: document.getElementById('editStatus').value,
+                    code: document.getElementById('editCode').value,
+                    jobTitle: document.getElementById('editJobTitle').value,
+                    jobDate: document.getElementById('editJobDate').value,
+                    phone: document.getElementById('editPhone').value,
+                    subject: document.getElementById('editSubject').value,
+                    weeklyQuota: parseFloat(document.getElementById('editWeeklyQuota').value) || 0,
+                    monthlyQuota: parseFloat(document.getElementById('editMonthlyQuota').value) || 0,
+                    qualification: document.getElementById('editQualification').value
+                };
                 staffData.push(newRecord);
             } else {
                 const id = parseInt(idVal);
@@ -372,16 +542,18 @@
                     item.qualification = document.getElementById('editQualification').value;
                 }
             }
-            await saveDataToCloud();
+
             closeModal();
+            await saveDataToCloud();
             initSubjectFilter();
             filterData();
             updateSubjectStats();
             updateStats();
         }
+
         async function deleteRecord(id) {
             if (!checkAuth()) return;
-            if (confirm("هل أنت تأكد من رغبتك في حذف هذا السجل؟")) {
+            if (confirm("هل أنت متأكد من رغبتك في حذف هذا السجل؟")) {
                 staffData = staffData.filter(item => item.id !== id);
                 await saveDataToCloud();
                 initSubjectFilter();
@@ -390,6 +562,7 @@
                 updateStats();
             }
         }
+
         function exportToExcel() {
             const exportData = staffData.map((item, index) => {
                 const parsedInfo = parseNationalId(item.nationalId);
@@ -412,11 +585,13 @@
             });
             exportData.push({});
             exportData.push({ "م": "تصميم وتطوير:", "الاسم الكامل": "أ / محمد عبدالوهاب القزاز" });
+
             const worksheet = XLSX.utils.json_to_sheet(exportData);
             const workbook = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(workbook, worksheet, "بيانات العاملين");
             XLSX.writeFile(workbook, "سجل_بيانات_العاملين_المدرسي.xlsx");
         }
+
         function printEmployeeStatement(id) {
             const item = staffData.find(record => record.id === id);
             if (!item) {
@@ -426,6 +601,7 @@
             const parsedInfo = parseNationalId(item.nationalId);
             const gender = item.gender || parsedInfo.gender;
             const age = item.age || parsedInfo.age;
+
             const printWindow = window.open('', '_blank', 'width=800,height=900');
             printWindow.document.write(`
                 <!DOCTYPE html>
@@ -495,15 +671,17 @@
                     </div>
                     <script>
                         window.onload = function() { window.print(); };
-                    </script>
+                    <\/script>
                 </body>
                 </html>
             `);
             printWindow.document.close();
         }
+
         function updateSubjectStats() {
             const activeStaff = staffData.filter(item => item.status === "أصلي" || item.status === "منتدب من");
             const subjectMap = {};
+
             activeStaff.forEach(item => {
                 const subject = item.subject || 'بدون تخصص';
                 if (!subjectMap[subject]) {
@@ -513,25 +691,36 @@
                 subjectMap[subject].weeklyQuota += parseInt(item.weeklyQuota) || 0;
                 subjectMap[subject].monthlyQuota += parseInt(item.monthlyQuota) || 0;
             });
+
             const subjectKeys = Object.keys(subjectMap);
             document.getElementById('totalSubjects').textContent = subjectKeys.length;
+
             let totalWeekly = 0;
             let totalMonthly = 0;
             subjectKeys.forEach(sub => {
                 totalWeekly += subjectMap[sub].weeklyQuota;
                 totalMonthly += subjectMap[sub].monthlyQuota;
             });
+
             document.getElementById('totalWeeklyQuota').textContent = totalWeekly;
             document.getElementById('totalMonthlyQuota').textContent = totalMonthly;
+
             const tableBody = document.getElementById('subjectStatsTable');
             tableBody.innerHTML = '';
             subjectKeys.sort((a, b) => subjectMap[b].count - subjectMap[a].count).forEach(sub => {
                 const data = subjectMap[sub];
                 const avgWeekly = data.count > 0 ? (data.weeklyQuota / data.count).toFixed(1) : 0;
-                const row = `<tr><td><strong>${sub}</strong></td><td><span class="badge" style="background-color: #e0e7ff; color: #3730a3;">${data.count}</span></td><td>${data.weeklyQuota}</td><td>${data.monthlyQuota}</td><td>${avgWeekly} حصة</td></tr>`;
+                const row = `<tr>
+                    <td><strong>${sub}</strong></td>
+                    <td><span class="badge" style="background-color: #e0e7ff; color: #3730a3;">${data.count}</span></td>
+                    <td>${data.weeklyQuota}</td>
+                    <td>${data.monthlyQuota}</td>
+                    <td>${avgWeekly} حصة</td>
+                </tr>`;
                 tableBody.innerHTML += row;
             });
         }
+
         function showSection(sectionName) {
             document.querySelectorAll('.section').forEach(section => { section.style.display = 'none'; });
             document.getElementById(sectionName).style.display = 'block';
@@ -543,6 +732,7 @@
                 updateSubjectStats();
             }
         }
+
         window.onload = () => {
             loadDataFromCloud();
         };
