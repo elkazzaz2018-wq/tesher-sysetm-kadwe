@@ -152,7 +152,7 @@
         <!-- قسم حافز المعلمين -->
         <div id="teacherBonus" class="section" style="display:none;">
             <h2 style="color: var(--primary-color); margin-bottom: 15px;">🏆 سجل حافز المعلمين (الابتدائي والإعدادي)</h2>
-            <p style="font-size: 0.85rem; color: #475569; margin-bottom: 15px;">* شرط الاستحقاق: يكون المعلم مستحقاً إذا كان (النصاب الفعلي ≥ النصاب الشهري) وعدد أيام الغياب لا تتجاوز 3 أيام.</p>
+            <p style="font-size: 0.85rem; color: #475569; margin-bottom: 15px;">* عند إضافة تواريخ الغياب يتم خصم حصص أيام الغياب من النصاب الفعلي وحساب الاستحقاق تلقائياً.</p>
             <div class="controls">
                 <input type="text" id="searchBonusInput" onkeyup="filterBonusData()" placeholder="ابحث باسم المعلم أو الرقم القومي...">
                 <button class="btn btn-excel" onclick="exportBonusToExcel()">تصدير جدول الحافز 📊</button>
@@ -165,10 +165,10 @@
                             <th>م</th>
                             <th>الاسم</th>
                             <th>الرقم القومي</th>
-                            <th>النصاب الأسبوعي</th>
                             <th>النصاب الشهري المطلوب</th>
-                            <th>النصاب الفعلي المنفذ</th>
+                            <th>تواريخ الغياب المسجلة</th>
                             <th>عدد أيام الغياب</th>
+                            <th>النصاب الفعلي المنفذ</th>
                             <th>عدد أيام الحضور</th>
                             <th>يستحق - لا يستحق</th>
                             <th class="btn-action">إجراءات</th>
@@ -179,7 +179,7 @@
             </div>
         </div>
 
-        <!-- قسم الجدول الأسبوعي للحصص (الجديد) -->
+        <!-- قسم الجدول الأسبوعي للحصص -->
         <div id="weeklySchedule" class="section" style="display:none;">
             <h2 style="color: var(--primary-color); margin-bottom: 15px;">📅 الجدول الأسبوعي وتوزيع الحصص اليومية</h2>
             
@@ -268,8 +268,9 @@
                 <div class="form-group"><label>التخصص / المادة</label><input type="text" id="editSubject"></div>
                 <div class="form-group"><label>النصاب الأسبوعي (حصص)</label><input type="number" id="editWeeklyQuota" oninput="calculateMonthlyQuota()" value="0"></div>
                 <div class="form-group"><label>النصاب الشهري المطلوب</label><input type="number" id="editMonthlyQuota" value="0"></div>
-                <div class="form-group"><label>النصاب الفعلي المنفذ (حصص)</label><input type="number" id="editActualQuota" value="0"></div>
+                <div class="form-group full-width"><label>تواريخ الغياب (افصل بين التواريخ بفواصل , )</label><input type="text" id="editAbsenceDates" placeholder="مثال: 2026-10-05, 2026-10-12" oninput="calculateAbsenceFromDates()"></div>
                 <div class="form-group"><label>عدد أيام الغياب الشهري</label><input type="number" id="editAbsenceDays" oninput="calculateAttendanceDays()" value="0"></div>
+                <div class="form-group"><label>النصاب الفعلي المنفذ (بعد الخصم)</label><input type="number" id="editActualQuota" value="0"></div>
                 <div class="form-group"><label>عدد أيام الحضور</label><input type="number" id="editAttendanceDays" value="22"></div>
                 <div class="form-group full-width"><label>المؤهل الدراسي</label><input type="text" id="editQualification"></div>
             </div>
@@ -280,15 +281,16 @@
         </div>
     </div>
 
-    <!-- النافذة المنبثقة للتعديل السريع على الحافز -->
+    <!-- النافذة المنبثقة للتعديل السريع على الحافز وتواريخ الغياب -->
     <div class="modal" id="bonusModal" onclick="if(event.target.id==='bonusModal') closeBonusModal()">
-        <div class="modal-content" style="width: 400px;">
-            <h3>تعديل بيانات حافز المعلم</h3>
+        <div class="modal-content" style="width: 450px;">
+            <h3>تعديل حافز وتواريخ غياب المعلم</h3>
             <input type="hidden" id="bonusEditId">
             <div class="form-group"><label>اسم المعلم</label><input type="text" id="bonusTeacherName" disabled style="background:#f1f5f9;"></div>
             <div class="form-group"><label>النصاب الشهري المطلوب</label><input type="number" id="bonusMonthlyQuota" disabled style="background:#f1f5f9;"></div>
-            <div class="form-group"><label>النصاب الفعلي المنفذ (حصص)</label><input type="number" id="bonusActualQuota"></div>
-            <div class="form-group"><label>عدد أيام الغياب الشهري</label><input type="number" id="bonusAbsenceDays" oninput="autoCalcBonusAttendance()"></div>
+            <div class="form-group"><label>تواريخ أيام الغياب (مفصولة بفاصة)</label><input type="text" id="bonusAbsenceDates" placeholder="2026-10-05, 2026-10-12" oninput="autoCalcBonusFromDates()"></div>
+            <div class="form-group"><label>عدد أيام الغياب</label><input type="number" id="bonusAbsenceDays" oninput="autoCalcBonusAttendance()"></div>
+            <div class="form-group"><label>النصاب الفعلي (بعد الخصم تلقائياً)</label><input type="number" id="bonusActualQuota"></div>
             <div class="form-group"><label>عدد أيام الحضور</label><input type="number" id="bonusAttendanceDays"></div>
             <div class="modal-actions">
                 <button class="btn" onclick="closeBonusModal()">إلغاء</button>
@@ -432,10 +434,25 @@
 
         function calculateMonthlyQuota() {
             const weekly = parseFloat(document.getElementById('editWeeklyQuota').value) || 0;
-            document.getElementById('editMonthlyQuota').value = weekly * 4;
-            if (document.getElementById('editActualQuota').value == 0) {
-                document.getElementById('editActualQuota').value = weekly * 4;
-            }
+            const monthly = weekly * 4;
+            document.getElementById('editMonthlyQuota').value = monthly;
+            calculateAbsenceFromDates();
+        }
+
+        function calculateAbsenceFromDates() {
+            const rawDates = document.getElementById('editAbsenceDates').value.trim();
+            const datesList = rawDates ? rawDates.split(',').map(d => d.trim()).filter(d => d.length > 0) : [];
+            const absenceDays = datesList.length;
+            
+            document.getElementById('editAbsenceDays').value = absenceDays;
+            
+            const weeklyQuota = parseFloat(document.getElementById('editWeeklyQuota').value) || 0;
+            const monthlyQuota = parseFloat(document.getElementById('editMonthlyQuota').value) || (weeklyQuota * 4);
+            const dailyQuota = weeklyQuota > 0 ? (weeklyQuota / 5) : 0;
+            const deductedQuota = absenceDays * dailyQuota;
+
+            document.getElementById('editActualQuota').value = Math.max(0, monthlyQuota - deductedQuota);
+            calculateAttendanceDays();
         }
 
         function calculateAttendanceDays() {
@@ -448,8 +465,6 @@
             return staffData.filter(item => (item.stage || 'الإعدادية') === currentStageFilter);
         }
 
-        // المعادلة المعدلة لحساب حافز المعلمين:
-        // تكون الحالة "يستحق" إذا كان النصاب الفعلي أكبر من أو يساوي النصاب الشهري، وعدد أيام الغياب <= 3 أيام
         function isEligibleForBonus(item) {
             const absence = parseInt(item.absenceDays) || 0;
             const actualQuota = parseFloat(item.actualQuota) || 0;
@@ -560,7 +575,7 @@
             });
         }
 
-        // عرض جدول حافز المعلمين
+        // عرض جدول حافز المعلمين مع تواريخ الغياب
         function renderBonusTable(filteredList = null) {
             const list = filteredList || getFilteredByStageData();
             const bonusBody = document.getElementById('bonusTableBody');
@@ -569,8 +584,9 @@
             list.forEach((item, index) => {
                 const weeklyQuota = parseFloat(item.weeklyQuota) || 0;
                 const monthlyQuota = parseFloat(item.monthlyQuota) || (weeklyQuota * 4);
-                const actualQuota = parseFloat(item.actualQuota) || monthlyQuota;
+                const actualQuota = parseFloat(item.actualQuota) !== undefined ? parseFloat(item.actualQuota) : monthlyQuota;
                 const absenceDays = parseInt(item.absenceDays) || 0;
+                const absenceDates = item.absenceDates || '-';
                 const attendanceDays = item.attendanceDays !== undefined ? item.attendanceDays : Math.max(0, 22 - absenceDays);
                 
                 const eligible = isEligibleForBonus(item);
@@ -582,13 +598,13 @@
                     '<td>' + (index + 1) + '</td>' +
                     '<td><strong>' + item.name + '</strong></td>' +
                     '<td>' + item.nationalId + '</td>' +
-                    '<td>' + weeklyQuota + '</td>' +
                     '<td>' + monthlyQuota + '</td>' +
-                    '<td><strong>' + actualQuota + '</strong></td>' +
+                    '<td style="color:#d97706; font-weight:bold;">' + absenceDates + '</td>' +
                     '<td>' + absenceDays + '</td>' +
+                    '<td><strong>' + actualQuota + '</strong></td>' +
                     '<td>' + attendanceDays + '</td>' +
                     '<td>' + statusBadge + '</td>' +
-                    '<td class="btn-action"><button class="btn btn-edit" onclick="openBonusModal(' + item.id + ')">تعديل الحافز</button></td>' +
+                    '<td class="btn-action"><button class="btn btn-edit" onclick="openBonusModal(' + item.id + ')">تعديل الحافز والغياب</button></td>' +
                 '</tr>';
                 bonusBody.innerHTML += row;
             });
@@ -606,11 +622,30 @@
             document.getElementById('bonusEditId').value = item.id;
             document.getElementById('bonusTeacherName').value = item.name;
             document.getElementById('bonusMonthlyQuota').value = monthly;
-            document.getElementById('bonusActualQuota').value = item.actualQuota !== undefined ? item.actualQuota : monthly;
+            document.getElementById('bonusAbsenceDates').value = item.absenceDates || "";
             document.getElementById('bonusAbsenceDays').value = absence;
+            document.getElementById('bonusActualQuota').value = item.actualQuota !== undefined ? item.actualQuota : monthly;
             document.getElementById('bonusAttendanceDays').value = item.attendanceDays !== undefined ? item.attendanceDays : Math.max(0, 22 - absence);
 
             document.getElementById('bonusModal').style.display = 'flex';
+        }
+
+        function autoCalcBonusFromDates() {
+            const rawDates = document.getElementById('bonusAbsenceDates').value.trim();
+            const datesList = rawDates ? rawDates.split(',').map(d => d.trim()).filter(d => d.length > 0) : [];
+            const absenceDays = datesList.length;
+
+            document.getElementById('bonusAbsenceDays').value = absenceDays;
+
+            const id = parseInt(document.getElementById('bonusEditId').value);
+            const item = staffData.find(r => r.id === id);
+            const weeklyQuota = item ? (item.weeklyQuota || 0) : 0;
+            const monthlyQuota = item ? (item.monthlyQuota || weeklyQuota * 4) : 0;
+            const dailyQuota = weeklyQuota > 0 ? (weeklyQuota / 5) : 0;
+            const deductedQuota = absenceDays * dailyQuota;
+
+            document.getElementById('bonusActualQuota').value = Math.max(0, monthlyQuota - deductedQuota);
+            autoCalcBonusAttendance();
         }
 
         function autoCalcBonusAttendance() {
@@ -626,8 +661,9 @@
             const id = parseInt(document.getElementById('bonusEditId').value);
             const index = staffData.findIndex(r => r.id === id);
             if (index !== -1) {
-                staffData[index].actualQuota = parseFloat(document.getElementById('bonusActualQuota').value) || 0;
+                staffData[index].absenceDates = document.getElementById('bonusAbsenceDates').value.trim();
                 staffData[index].absenceDays = parseInt(document.getElementById('bonusAbsenceDays').value) || 0;
+                staffData[index].actualQuota = parseFloat(document.getElementById('bonusActualQuota').value) || 0;
                 staffData[index].attendanceDays = parseInt(document.getElementById('bonusAttendanceDays').value) || 0;
                 
                 await saveDataToCloud();
@@ -637,7 +673,6 @@
             }
         }
 
-        // عرض وتقسيم الجدول الأسبوعي للحصص
         function renderScheduleTable() {
             const list = getFilteredByStageData();
             const schedBody = document.getElementById('scheduleTableBody');
@@ -743,8 +778,9 @@
             document.getElementById('editSubject').value = "";
             document.getElementById('editWeeklyQuota').value = 0;
             document.getElementById('editMonthlyQuota').value = 0;
-            document.getElementById('editActualQuota').value = 0;
+            document.getElementById('editAbsenceDates').value = "";
             document.getElementById('editAbsenceDays').value = 0;
+            document.getElementById('editActualQuota').value = 0;
             document.getElementById('editAttendanceDays').value = 22;
             document.getElementById('editQualification').value = "";
             document.getElementById('dataModal').style.display = 'flex';
@@ -778,8 +814,9 @@
             document.getElementById('editSubject').value = item.subject;
             document.getElementById('editWeeklyQuota').value = weekly;
             document.getElementById('editMonthlyQuota').value = monthly;
-            document.getElementById('editActualQuota').value = item.actualQuota !== undefined ? item.actualQuota : monthly;
+            document.getElementById('editAbsenceDates').value = item.absenceDates || "";
             document.getElementById('editAbsenceDays').value = absence;
+            document.getElementById('editActualQuota').value = item.actualQuota !== undefined ? item.actualQuota : monthly;
             document.getElementById('editAttendanceDays').value = item.attendanceDays !== undefined ? item.attendanceDays : Math.max(0, 22 - absence);
             document.getElementById('editQualification').value = item.qualification;
             document.getElementById('dataModal').style.display = 'flex';
@@ -817,8 +854,9 @@
                 subject: document.getElementById('editSubject').value,
                 weeklyQuota: parseFloat(document.getElementById('editWeeklyQuota').value) || 0,
                 monthlyQuota: parseFloat(document.getElementById('editMonthlyQuota').value) || 0,
-                actualQuota: parseFloat(document.getElementById('editActualQuota').value) || 0,
+                absenceDates: document.getElementById('editAbsenceDates').value.trim(),
                 absenceDays: parseInt(document.getElementById('editAbsenceDays').value) || 0,
+                actualQuota: parseFloat(document.getElementById('editActualQuota').value) || 0,
                 attendanceDays: parseInt(document.getElementById('editAttendanceDays').value) || 0,
                 qualification: document.getElementById('editQualification').value
             };
@@ -889,8 +927,9 @@
             const bonusExportData = currentStageList.map((item, index) => {
                 const weeklyQuota = parseFloat(item.weeklyQuota) || 0;
                 const monthlyQuota = parseFloat(item.monthlyQuota) || (weeklyQuota * 4);
-                const actualQuota = parseFloat(item.actualQuota) || monthlyQuota;
+                const actualQuota = parseFloat(item.actualQuota) !== undefined ? parseFloat(item.actualQuota) : monthlyQuota;
                 const absenceDays = parseInt(item.absenceDays) || 0;
+                const absenceDates = item.absenceDates || '-';
                 const attendanceDays = item.attendanceDays !== undefined ? item.attendanceDays : Math.max(0, 22 - absenceDays);
                 const eligible = isEligibleForBonus(item) ? "يستحق" : "لا يستحق";
 
@@ -898,10 +937,10 @@
                     "م": index + 1,
                     "الاسم": item.name,
                     "الرقم القومي": item.nationalId,
-                    "النصاب الأسبوعي": weeklyQuota,
                     "النصاب الشهري": monthlyQuota,
-                    "النصاب الفعلي": actualQuota,
+                    "تواريخ الغياب المسجلة": absenceDates,
                     "عدد أيام الغياب": absenceDays,
+                    "النصاب الفعلي المنفذ": actualQuota,
                     "عدد أيام الحضور": attendanceDays,
                     "يستحق - لا يستحق": eligible
                 };
@@ -966,6 +1005,7 @@
                 '<div class="info-item"><label>الرقم القومي:</label> ' + item.nationalId + '</div>' +
                 '<div class="info-item"><label>المادة / التخصص:</label> ' + (item.subject || '-') + '</div>' +
                 '<div class="info-item"><label>النصاب الأسبوعي:</label> ' + (item.weeklyQuota || 0) + ' حصة</div>' +
+                '<div class="info-item"><label>تواريخ الغياب:</label> ' + (item.absenceDates || '-') + '</div>' +
                 '</div><br><button onclick="window.print()">طباعة</button></body></html>';
 
             printWindow.document.write(htmlContent);
